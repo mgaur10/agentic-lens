@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and set values.
+# Required: project_id, org_id, allowed_members (user or service account emails).
+
+project_id = "agentic-prismv333"
+org_id      = "123456789012"
+
+# Allowed for both ingress and egress (use "user:email" or "serviceAccount:...")
+allowed_members = ["user:your-email@example.com"]
+
+# Optional overrides
+# policy_title       = "Agentic Prism VPC-SC Policy"
+# access_level_title = "prism_allowed_users"
+# perimeter_title    = "prism_perimeter"

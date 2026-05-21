@@ -1,0 +1,2 @@
+# Populated only by deploy.sh staging (vendored department agents for Vertex); do not commit.
+peer_agents/

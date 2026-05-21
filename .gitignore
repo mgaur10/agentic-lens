@@ -1,0 +1,63 @@
+# --- Local deploy outputs (logs, engine IDs, sign-off snapshots) ---
+output/*
+!output/.gitkeep
+!output/README.md
+
+# --- Operator secrets (templates only in git) ---
+config/migration.env
+app/.env
+app/versions.env
+.env
+.env.*
+!**/*.env.template
+!**/*.env.example
+!**/env.template
+versions.env
+!versions.env.template
+
+# --- Python ---
+.venv/
+**/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# --- Node (Glass UI) ---
+node_modules/
+**/node_modules/
+
+# --- Terraform / infra state (in bundled app/) ---
+**/.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+*.tfvars
+!*.tfvars.example
+!terraform.tfvars.example
+
+# --- Agent Engine deploy artifacts (per project) ---
+**/.agent_engine_config.json
+
+# --- Bundled app local DB / filled artifacts ---
+app/**/*.db
+app/**/*.db-journal
+artifacts/engine-ids-filled.env.example
+artifacts/resource-inventory-filled.csv
+artifacts/*-filled.*
+
+# --- IDE / OS ---
+.cursor/
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+*.log

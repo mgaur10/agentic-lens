@@ -1,0 +1,12 @@
+.venv/
+**/.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+*.db
+*.db-journal
+**/.agent_engine_config.json
+__pycache__/
+node_modules/

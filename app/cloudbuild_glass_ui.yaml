@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        "build",
+        "-t",
+        "us-west1-docker.pkg.dev/$PROJECT_ID/prism-glass-ui/ai-prism-agent-glass-ui",
+        "-f",
+        "Dockerfile_glass_ui",
+        ".",
+      ]
+images:
+  - "us-west1-docker.pkg.dev/$PROJECT_ID/prism-glass-ui/ai-prism-agent-glass-ui"
+

@@ -1,0 +1,7 @@
+[
+  {"name": "timestamp", "type": "TIMESTAMP", "mode": "REQUIRED"},
+  {"name": "usage_type", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "user_email", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "customer_name", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "opportunity_link", "type": "STRING", "mode": "NULLABLE"}
+]

@@ -1,0 +1,11 @@
+.env
+versions.env
+.venv/
+agentic-lens/.venv/
+*.db
+*.db-journal
+**/.terraform/
+terraform.tfstate*
+.agent_engine_config.json
+__pycache__/
+node_modules/
