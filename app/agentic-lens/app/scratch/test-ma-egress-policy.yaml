@@ -1,0 +1,24 @@
+action: CUSTOM
+customProvider:
+  authzExtension:
+    resources:
+    - projects/795375693569/locations/us-central1/authzExtensions/gemini-corp-ma-extension
+httpRules:
+- to:
+    operations:
+    - hosts:
+      - suffix: .aiplatform.googleapis.com
+      - suffix: .aiplatform.googleapis.com:443
+      - suffix: -aiplatform.googleapis.com
+      - suffix: -aiplatform.googleapis.com:443
+      - suffix: aiplatform.googleapis.com
+      - suffix: aiplatform.googleapis.com:443
+      paths:
+      - contains: "generatecontent"
+        ignoreCase: true
+name: projects/agentic-ai-lens/locations/us-central1/authzPolicies/gemini-corp-ma-egress-policy
+policyProfile: CONTENT_AUTHZ
+target:
+  loadBalancingScheme: LOAD_BALANCING_SCHEME_UNSPECIFIED
+  resources:
+  - projects/795375693569/locations/us-central1/agentGateways/main-egress-agw-v2

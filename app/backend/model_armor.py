@@ -97,15 +97,12 @@ def _deidentify_via_dlp(text: str) -> str | None:
     if not project_id or not text:
         return None
     try:
-        from google.api_core.client_options import ClientOptions
         from google.cloud import dlp_v2
 
         parent = f"projects/{project_id}/locations/{location}"
         inspect_name = f"{parent}/inspectTemplates/identification-template"
         deid_name = f"{parent}/deidentifyTemplates/deidentify-replace-with-infotype"
-        client = dlp_v2.DlpServiceClient(
-            client_options=ClientOptions(api_endpoint=f"dlp.{location}.rep.googleapis.com"),
-        )
+        client = dlp_v2.DlpServiceClient()
         req = dlp_v2.DeidentifyContentRequest(
             parent=parent,
             item=dlp_v2.ContentItem(value=text),
@@ -277,7 +274,7 @@ def scan_prompt(text: str, security_level: str) -> Dict[str, Any]:
     location = _model_armor_location()
     try:
         client = modelarmor_v1.ModelArmorClient(
-            transport="rest",
+            transport="grpc",
             client_options=ClientOptions(api_endpoint=f"modelarmor.{location}.rep.googleapis.com"),
         )
         user_prompt_data = modelarmor_v1.DataItem(text=text)

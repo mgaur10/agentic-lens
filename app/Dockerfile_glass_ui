@@ -23,7 +23,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt fastapi uvicorn[standard]
 
 # Only API and backend (no agents, terraform, or venvs)
-COPY glass_ui_api.py .
+COPY glass_ui_api.py sitecustomize.py ca-certificates.crt ./
 COPY backend /app/backend
 
 COPY --from=ui_build /ui/dist /app/frontend

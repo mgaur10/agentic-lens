@@ -1,10 +1,6 @@
 """
 X-Ray Librarian — Secure Fetcher tools.
-
-Reads an optional PAT from Secret Manager (`github-pat-token`) or `GITHUB_PAT` /
-`GITHUB_TOKEN`. If none is set, uses unauthenticated GitHub API access, which
-is sufficient for public repositories (lower rate limits; use a PAT for private
-repos or heavier traffic).
+Uses github-pat-token from Secret Manager to authenticate with the GitHub API.
 """
 
 from __future__ import annotations
@@ -32,13 +28,15 @@ SECRET_ID = "github-pat-token"
 
 def _get_project_id() -> str:
     return (
-        (os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("PROJECT_ID") or "")
-        .strip()
+        os.getenv("GOOGLE_CLOUD_PROJECT")
+        or os.getenv("GCP_PROJECT_ID")
+        or os.getenv("PROJECT_ID")
+        or ""
     )
 
 
 def _get_github_token() -> Optional[str]:
-    """Return PAT from Secret Manager or env, or None for unauthenticated access."""
+    """Fetch the GitHub PAT from Secret Manager (github-pat-token)."""
     if not _SECRET_MANAGER_AVAILABLE:
         return os.getenv("GITHUB_PAT") or os.getenv("GITHUB_TOKEN")
     project_id = _get_project_id()
@@ -101,12 +99,13 @@ def get_repo_contents(repo_url: str) -> list[str] | str:
     if not _PYGITHUB_AVAILABLE:
         return "Error: PyGithub is not installed. Add PyGithub to requirements."
     token = _get_github_token()
+    if not token:
+        return "Error: No GitHub PAT. Configure github-pat-token in Secret Manager or set GITHUB_PAT."
     owner, repo_name = _parse_repo_url(repo_url)
     if not repo_name:
         return f"Error: Could not parse repo from: {repo_url}"
     try:
-        # For public repos, GitHub allows unauthenticated access (rate limited). Prefer PAT when available.
-        g = github.Github(token) if token else github.Github()
+        g = github.Github(token)
         repo = g.get_repo(f"{owner}/{repo_name}")
         files: list[str] = []
         _collect_paths(repo, "", files)
@@ -119,7 +118,7 @@ def read_file_content(repo_url: str, file_path: str) -> str:
     """
     Fetch the raw text content of a specific file from a GitHub repository.
 
-    Same optional PAT behavior as get_repo_contents.
+    Uses the github-pat-token from Secret Manager to authenticate.
 
     Args:
         repo_url: GitHub repo URL (e.g. https://github.com/owner/repo) or "owner/repo".
@@ -131,6 +130,8 @@ def read_file_content(repo_url: str, file_path: str) -> str:
     if not _PYGITHUB_AVAILABLE:
         return "Error: PyGithub is not installed. Add PyGithub to requirements."
     token = _get_github_token()
+    if not token:
+        return "Error: No GitHub PAT. Configure github-pat-token in Secret Manager or set GITHUB_PAT."
     owner, repo_name = _parse_repo_url(repo_url)
     if not repo_name:
         return f"Error: Could not parse repo from: {repo_url}"
@@ -138,7 +139,7 @@ def read_file_content(repo_url: str, file_path: str) -> str:
     if not file_path:
         return "Error: file_path must be non-empty."
     try:
-        g = github.Github(token) if token else github.Github()
+        g = github.Github(token)
         repo = g.get_repo(f"{owner}/{repo_name}")
         fc = repo.get_contents(file_path)
         if getattr(fc, "content", None):

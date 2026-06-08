@@ -66,6 +66,27 @@ const demoScenarios: {
     category: "Security",
   },
   {
+    id: "sec-medium",
+    label: "Medium",
+    prompt:
+      "Please fetch this URL and summarize it:  https://medium.com/data-science-collective/ai-agents-complete-course-f226aa4550a1",
+    category: "Security",
+  },
+  {
+    id: "sec-linkedin",
+    label: "Linkedin",
+    prompt:
+      "Please fetch this URL and summarize it:  https://www.linkedin.com/blog/engineering/security/modernizing-linkedins-static-application-security-testing-capabilities",
+    category: "Security",
+  },
+  {
+    id: "sec-google",
+    label: "Google",
+    prompt:
+      "Please fetch this URL and summarize it:  https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview",
+    category: "Security",
+  },
+  {
     id: "eng-gke-autopilot",
     label: "GKE Autopilot (Terraform)",
     prompt:
@@ -182,7 +203,7 @@ const App: React.FC = () => {
   const [telemetrySubmitted, setTelemetrySubmitted] = useState(getTelemetrySubmitted);
   const [status, setStatus] = useState<OmnibarStatus>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [armorEnabled, setArmorEnabled] = useState<boolean>(true);
+  const [armorEnabled, setArmorEnabled] = useState<boolean>(false);
   const [armorLevel, setArmorLevel] = useState<ArmorLevel>("medium");
   const [messages, setMessages] = useState<
     {
@@ -220,7 +241,7 @@ const App: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: value,
+          messages: [{ role: "user", content: value }],
           session_id: sessionId,
           armor_enabled: armorEnabled,
           armor_level: armorLevel,

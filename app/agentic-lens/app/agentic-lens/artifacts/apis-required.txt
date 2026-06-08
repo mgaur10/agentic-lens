@@ -1,0 +1,23 @@
+# GCP APIs enabled by infra/steps/01_enable_apis.sh
+# Verify: gcloud services list --enabled --project=PROJECT_ID
+
+aiplatform.googleapis.com
+storage.googleapis.com
+cloudkms.googleapis.com
+discoveryengine.googleapis.com
+modelarmor.googleapis.com
+dlp.googleapis.com
+iam.googleapis.com
+secretmanager.googleapis.com
+logging.googleapis.com
+firestore.googleapis.com
+run.googleapis.com
+cloudbuild.googleapis.com
+artifactregistry.googleapis.com
+bigquery.googleapis.com
+accesscontextmanager.googleapis.com
+
+# Post-deploy / telemetry (grant-engine-telemetry-iam.sh)
+telemetry.googleapis.com
+cloudtrace.googleapis.com
+monitoring.googleapis.com

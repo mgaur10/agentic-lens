@@ -31,22 +31,8 @@ class SecurityGuard:
     def validate(self, input_text: str) -> Tuple[bool, str]:
         """
         Validate input text for security threats.
-        
-        Args:
-            input_text: The user input to validate
-            
-        Returns:
-            Tuple of (is_safe: bool, message: str)
-            - (True, "Input Safe") if input passes validation
-            - (False, "SECURITY ALERT: Injection Attempt Detected") if threat detected
         """
-        if not input_text or not isinstance(input_text, str):
-            return (False, "SECURITY ALERT: Invalid input type")
-        
-        # Check against blocked patterns
         for pattern in self.compiled_patterns:
             if pattern.search(input_text):
-                # Security alert logged via return message (no print statements in production)
-                return (False, "SECURITY ALERT: Injection Attempt Detected")
-        
+                return (False, f"Blocked by Zero Trust Policy: Detected malicious keyword pattern.")
         return (True, "Input Safe")

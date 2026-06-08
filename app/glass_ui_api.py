@@ -451,11 +451,17 @@ def _parse_sources_block(text: str) -> List[SourceItem]:
     return items
 
 
+class MessageItem(BaseModel):
+    role: str
+    content: str
+
+
 class QueryRequest(BaseModel):
-    message: str
+    messages: Optional[List[MessageItem]] = None
+    message: Optional[str] = None
     session_id: Optional[str] = None
     armor_enabled: Optional[bool] = None
-    armor_level: Optional[str] = None  # \"off\" | \"medium\" | \"high\"
+    armor_level: Optional[str] = None  # "off" | "medium" | "high"
 
 
 class QueryResponse(BaseModel):
@@ -474,7 +480,11 @@ class QueryResponse(BaseModel):
 
 def _execute_query_request(req: QueryRequest) -> QueryResponse:
     t0 = time.perf_counter()
-    user_input = (req.message or "").strip()
+    if req.messages and len(req.messages) > 0:
+        user_input = req.messages[-1].content.strip()
+    else:
+        user_input = (req.message or "").strip()
+    
     if not user_input:
         raise HTTPException(status_code=400, detail="message is required")
 
@@ -488,8 +498,6 @@ def _execute_query_request(req: QueryRequest) -> QueryResponse:
 
     # Security level from request (default medium, allow off/high)
     security_level = (req.armor_level or "medium").lower()
-    if not req.armor_enabled:
-        security_level = "off"
 
     execution_log: List[str] = []
 
@@ -527,6 +535,17 @@ def _execute_query_request(req: QueryRequest) -> QueryResponse:
             )
         template = armor_result.get("template", "security-medium")
         summary = armor_result.get("armor_summary") or "Passed"
+        # Update user_input with sanitized (de-identified) prompt if present
+        sanitized_prompt = armor_result.get("sanitized_prompt")
+        if sanitized_prompt and sanitized_prompt != user_input:
+            user_input = sanitized_prompt
+            _append_log(
+                session_id,
+                message=f"🛡️ Model Armor: Prompt de-identified: {user_input[:80]}",
+                log_type="security",
+                payload=None,
+                turn=current_turn,
+            )
         _append_log(
             session_id,
             message=f"🛡️ Model Armor: Passed (template: {template})",

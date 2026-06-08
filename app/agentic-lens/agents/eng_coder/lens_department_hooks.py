@@ -80,6 +80,10 @@ _llm_otel_stack: contextvars.ContextVar[Optional[List[Tuple[Any, Any]]]] = conte
     "lens_llm_otel_stack", default=None
 )
 
+_lens_request_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "lens_llm_request_id", default=None
+)
+
 
 def _stack_push(span: Any, token: Any) -> None:
     st = _llm_otel_stack.get()
@@ -111,6 +115,8 @@ def make_lens_department_callbacks(
     span_name: str,
     department: str,
     agent_role: str,
+    agent_id: str,
+    model: Optional[str] = None,
 ) -> Tuple[
     Callable[..., Any],
     Callable[..., Any],
@@ -132,6 +138,9 @@ def make_lens_department_callbacks(
                         continue
                     lens_rid, tp, ts, ui_sid, cleaned = _strip_department_prefixes(str(raw))
                     part.text = cleaned
+
+                    if lens_rid:
+                        _lens_request_id.set(lens_rid)
 
                     remote_ctx = None
                     if tp or ts:
@@ -182,6 +191,24 @@ def make_lens_department_callbacks(
         return None
 
     def after_model(callback_context: Any, llm_response: Any):
+        try:
+            try:
+                from lens_llm_usage import emit_llm_usage_from_response
+            except ImportError:
+                from .lens_llm_usage import emit_llm_usage_from_response
+
+            sess = getattr(getattr(callback_context, "session", None), "id", None)
+            emit_llm_usage_from_response(
+                llm_response,
+                agent_id=agent_id,
+                department=department,
+                agent_role=agent_role,
+                model=model,
+                lens_request_id=_lens_request_id.get(),
+                session_id=str(sess) if sess else None,
+            )
+        except Exception as e:
+            logger.debug("lens llm_usage emit failed: %s", e)
         _stack_pop_end()
         return None
 
@@ -198,10 +225,17 @@ def attach_lens_tracing_to_agent(
     span_name: str,
     department: str,
     agent_role: str,
+    agent_id: Optional[str] = None,
 ) -> None:
     """Prepend Lens callbacks to ``LlmAgent`` (mirrors Engineering rollout for Chat / Events / X-Ray / eng_* LlmAgents)."""
+    resolved_agent_id = agent_id or getattr(agent, "name", "unknown")
+    resolved_model = getattr(agent, "model", None)
     bm, am, oe = make_lens_department_callbacks(
-        span_name=span_name, department=department, agent_role=agent_role
+        span_name=span_name,
+        department=department,
+        agent_role=agent_role,
+        agent_id=str(resolved_agent_id),
+        model=str(resolved_model) if resolved_model else None,
     )
 
     def _prepend(cur, first):

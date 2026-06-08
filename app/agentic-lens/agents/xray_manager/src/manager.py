@@ -396,8 +396,12 @@ def _call_engine_unbounded(engine_name: str, message: str, session_id: str | Non
                 return deep_local[0].strip()
             return ""
 
-        events = list(stream)
-        body = _materialize_from_events(events)
+        events = []
+        try:
+            events = list(stream)
+        except Exception as e_stream_iter:
+            logger.warning("Stream iteration failed (possibly gRPC END_STREAM bug): %s. Falling back to query()", e_stream_iter)
+        body = _materialize_from_events(events) if events else ""
         if body:
             return body
         if session_id:

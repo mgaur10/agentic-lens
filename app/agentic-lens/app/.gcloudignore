@@ -1,0 +1,34 @@
+# Keep Cloud Build context small.
+# Dockerfile_glass_ui only needs:
+# - glass_ui_api.py
+# - backend/
+# - agentic-lens/glass_ui/
+# - requirements.txt
+#
+# Everything below can be ignored to avoid huge tarballs.
+
+# Local virtual envs (massive)
+**/.venv/
+
+# Python cache
+**/__pycache__/
+
+# Node artifacts
+**/node_modules/
+**/dist/
+
+# Terraform working dirs + state (can be large)
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/terraform.tfstate
+**/terraform.tfstate.*
+
+# Git + editor noise
+.git/
+.github/
+.DS_Store
+
+# Local logs
+**/*.log
+

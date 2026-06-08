@@ -1,0 +1,368 @@
+{
+  "bindings": [
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic-lens-chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic-lens-supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_coder",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_lead",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_architect",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_librarian",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_specialist",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "projects/agentic-security-dev/roles/reasoningEngineSessionUser"
+    },
+    {
+      "members": [
+        "serviceAccount:test-651@agentic-security-dev.iam.gserviceaccount.com"
+      ],
+      "role": "roles/accessapproval.viewer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-agentgateway.iam.gserviceaccount.com"
+      ],
+      "role": "roles/agentgateway.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic-lens-supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.admin"
+    },
+    {
+      "members": [
+        "principalSet://agents.global.org-873180247571.system.id.goog/attribute.platformContainer/aiplatform/projects/504643566830"
+      ],
+      "role": "roles/aiplatform.agentDefaultAccess"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-vertex-rag.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.ragServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.reasoningEngineServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_coder",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_lead",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.user"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor"
+      ],
+      "role": "roles/aiplatform.viewer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com"
+      ],
+      "role": "roles/bigquery.dataEditor"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:504643566830@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-cloudkms.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudkms.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-cloudkms.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudkms.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/504643566830/locations/us-central1/reasoningEngines/536170797971013632",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_coder",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_lead",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_architect",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_librarian",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_specialist",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudtrace.agent"
+    },
+    {
+      "members": [
+        "serviceAccount:504643566830@cloudservices.gserviceaccount.com"
+      ],
+      "role": "roles/compute.instanceGroupManagerServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@compute-system.iam.gserviceaccount.com"
+      ],
+      "role": "roles/compute.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@containerregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containerregistry.ServiceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic-lens-chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_specialist"
+      ],
+      "role": "roles/datastore.user"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor"
+      ],
+      "role": "roles/datastore.viewer"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events"
+      ],
+      "role": "roles/discoveryengine.viewer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@dlp-api.iam.gserviceaccount.com"
+      ],
+      "role": "roles/dlp.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor"
+      ],
+      "role": "roles/dlp.user"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-dep.iam.gserviceaccount.com"
+      ],
+      "role": "roles/dns.peer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@firebase-rules.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaserules.system"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "principalSet://agents.global.org-873180247571.system.id.goog/attribute.platformContainer/aiplatform/projects/504643566830"
+      ],
+      "role": "roles/iap.httpsResourceAccessor"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/504643566830/locations/us-central1/reasoningEngines/1899380498459787264",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/504643566830/locations/us-central1/reasoningEngines/536170797971013632",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_coder",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_lead",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_architect",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_librarian",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_specialist",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+      ],
+      "role": "roles/logging.logWriter"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager"
+      ],
+      "role": "roles/modelarmor.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-agentgateway.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-dep.iam.gserviceaccount.com"
+      ],
+      "role": "roles/modelarmor.calloutUser"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-modelarmor.iam.gserviceaccount.com"
+      ],
+      "role": "roles/modelarmor.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com"
+      ],
+      "role": "roles/modelarmor.user"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+      ],
+      "role": "roles/monitoring.metricWriter"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-networkactions.iam.gserviceaccount.com"
+      ],
+      "role": "roles/networkactions.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-ns-authz.iam.gserviceaccount.com"
+      ],
+      "role": "roles/networksecurity.authzServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-notebooks.iam.gserviceaccount.com"
+      ],
+      "role": "roles/notebooks.serviceAgent"
+    },
+    {
+      "members": [
+        "user:admin@manishkgaur.altostrat.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-pubsub.iam.gserviceaccount.com"
+      ],
+      "role": "roles/pubsub.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@serverless-robot-prod.iam.gserviceaccount.com"
+      ],
+      "role": "roles/run.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-dep.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceextensions.serviceAgent"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_chat",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_coder",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_lead",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_quality_and_security_reviewer",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_events",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_supervisor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_architect",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_auditor",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_librarian",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_manager",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_specialist",
+        "serviceAccount:service-504643566830@gcp-sa-agentgateway.iam.gserviceaccount.com",
+        "serviceAccount:service-504643566830@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceusage.serviceUsageConsumer"
+    },
+    {
+      "members": [
+        "serviceAccount:504643566830-compute@developer.gserviceaccount.com"
+      ],
+      "role": "roles/storage.objectViewer"
+    },
+    {
+      "members": [
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_eng_scout",
+        "principal://agents.global.org-873180247571.system.id.goog/resources/aiplatform/projects/agentic-security-dev/locations/us-central1/agents/agentic_lens_xray_architect"
+      ],
+      "role": "roles/viewer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-504643566830@gcp-sa-websecurityscanner.iam.gserviceaccount.com"
+      ],
+      "role": "roles/websecurityscanner.serviceAgent"
+    }
+  ],
+  "etag": "BwZSWIEai9A=",
+  "version": 1
+}

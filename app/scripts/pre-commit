@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Git pre-commit hook for Agentic-Lens
+#
+# This hook runs the pre-flight structural guardrails to ensure that no
+# commit introduces relative imports, dependency conflicts, or Org Policy
+# violations that would break the Vertex AI deployment.
+#
+# To install:
+#   ln -s ../../scripts/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+
+set -e
+
+# Find the directories relative to this script's location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+AGENTS_DIR="$APP_DIR/agentic-lens/agents"
+PREFLIGHT_SCRIPT="$SCRIPT_DIR/run_preflight_guardrails.py"
+
+echo "🛡️ Running Agentic-Lens Git Pre-Commit Guardrails..."
+
+if [[ ! -d "$AGENTS_DIR" ]]; then
+  echo "⚠️ AGENTS_DIR not found at $AGENTS_DIR. Skipping pre-commit checks."
+  exit 0
+fi
+
+if [[ ! -f "$PREFLIGHT_SCRIPT" ]]; then
+  echo "⚠️ Preflight script not found at $PREFLIGHT_SCRIPT. Skipping pre-commit checks."
+  exit 0
+fi
+
+# Dynamically gather all agents (any directory inside agentic-lens/agents that has an agent.py or root_agent.yaml)
+AGENTS=()
+for agent_path in "$AGENTS_DIR"/*; do
+  if [[ -d "$agent_path" ]]; then
+    agent_name=$(basename "$agent_path")
+    # Exclude _staged deployment artifact folders
+    if [[ "$agent_name" == *"_staged" ]]; then
+      continue
+    fi
+    # Only include valid agent directories (e.g. they have an agent.py or requirements.txt)
+    if [[ -f "$agent_path/agent.py" ]] || [[ -f "$agent_path/requirements.txt" ]]; then
+      AGENTS+=("$agent_name")
+    fi
+  fi
+done
+
+if [[ ${#AGENTS[@]} -eq 0 ]]; then
+  echo "⚠️ No agents found in $AGENTS_DIR. Skipping pre-commit checks."
+  exit 0
+fi
+
+# Run the python script
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD="python3"
+else
+  PYTHON_CMD="python"
+fi
+
+if ! "$PYTHON_CMD" "$PREFLIGHT_SCRIPT" "$AGENTS_DIR" "${AGENTS[@]}"; then
+  echo ""
+  echo "❌ PRE-COMMIT FAILED: The structural guardrails detected an issue."
+  echo "   Please fix the errors above before committing."
+  echo "   (If you must bypass, use: git commit --no-verify)"
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed."
+exit 0

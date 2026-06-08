@@ -12,8 +12,8 @@ if [[ -z "${GCP_PROJECT_ID:-}" ]]; then
   exit 1
 fi
 
-# Match Vertex / versions.env default (us-west1) unless REGION is set.
-REGION="${REGION:-us-west1}"
+# Match Vertex / versions.env default (us-central1) unless REGION is set.
+REGION="${REGION:-us-central1}"
 
 # Cloud Run request timeout (seconds). One /api/query call runs Supervisor then a department engine
 # sequentially; each hop can take several minutes (Engineering: Scout→Coder→Quality and Security Reviewer). Default 300s
@@ -31,7 +31,7 @@ GLASS_UI_EXTRA_INVOKERS="${GLASS_UI_EXTRA_INVOKERS:-}"
 
 # Required env vars for Cloud Run
 # google-genai: allow ADC token refresh when calling Vertex Agent Engine APIs (reduces 401s).
-ENV_VARS="GCP_PROJECT_ID=${GCP_PROJECT_ID},GCP_LOCATION=${REGION},GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES=false"
+ENV_VARS="GCP_PROJECT_ID=${GCP_PROJECT_ID},GCP_LOCATION=${REGION},GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES=false,GRPC_DNS_RESOLVER=native"
 
 # Optional: pass through Supervisor/engine IDs for routing
 if [[ -n "${AGENTIC_LENS_SUPERVISOR_ENGINE:-}" ]]; then
@@ -65,8 +65,9 @@ unset _k _v
 if [[ -n "${GLASS_UI_LOGS_FIRESTORE_DATABASE:-}" ]]; then
   ENV_VARS="${ENV_VARS},GLASS_UI_LOGS_FIRESTORE_DATABASE=${GLASS_UI_LOGS_FIRESTORE_DATABASE}"
 fi
+ENV_VARS="${ENV_VARS},LENS_STRICT_ENGINE_STREAM=true"
 
-IMAGE="us-west1-docker.pkg.dev/${GCP_PROJECT_ID}/prism-glass-ui/ai-prism-agent-glass-ui"
+IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/prism-glass-ui/ai-prism-agent-glass-ui"
 
 echo "Building image ${IMAGE} with cloudbuild_glass_ui.yaml..."
 gcloud builds submit \
@@ -76,10 +77,10 @@ gcloud builds submit \
 
 if [[ "${GLASS_UI_ALLOW_UNAUTHENTICATED}" == "1" || "${GLASS_UI_ALLOW_UNAUTHENTICATED}" == "true" ]]; then
   echo "Deploying Cloud Run service ${SERVICE_NAME} (GLASS_UI_ALLOW_UNAUTHENTICATED=1 → public invoke)..."
-  AUTH_FLAG=(--allow-unauthenticated)
+  AUTH_FLAG=(--allow-unauthenticated --ingress=all --no-iap)
 else
   echo "Deploying Cloud Run service ${SERVICE_NAME} (private invoke; use IAP or authenticated users)..."
-  AUTH_FLAG=(--no-allow-unauthenticated)
+  AUTH_FLAG=(--no-allow-unauthenticated --ingress=all --iap)
 fi
 
 gcloud run deploy "${SERVICE_NAME}" \
@@ -93,6 +94,9 @@ gcloud run deploy "${SERVICE_NAME}" \
   --min-instances 1 \
   --max-instances 5 \
   --timeout "${GLASS_UI_CLOUD_RUN_TIMEOUT_S}" \
+  --network=gemini-corp-vpc \
+  --subnet=gemini-corp-swp-subnet \
+  --vpc-egress=private-ranges-only \
   --set-env-vars "${ENV_VARS}"
 
 PROJECT_NUMBER="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(projectNumber)')"
@@ -122,19 +126,6 @@ fi
 if [[ "${GLASS_UI_ALLOW_UNAUTHENTICATED}" == "1" || "${GLASS_UI_ALLOW_UNAUTHENTICATED}" == "true" ]]; then
   echo "Skipping IAP service-account invoker (public Cloud Run; re-run deploy without GLASS_UI_ALLOW_UNAUTHENTICATED when IAP is back)."
 else
-  echo "Ensuring IAP can invoke Cloud Run (${IAP_SA})..."
-  if ! gcloud iam service-accounts describe "${IAP_SA}" --project="${GCP_PROJECT_ID}" >/dev/null 2>&1; then
-    echo "WARN: IAP service account ${IAP_SA} not found (IAP not enabled yet — Phase 6)."
-    echo "      Use GLASS_UI_EXTRA_INVOKERS or GLASS_UI_ALLOW_UNAUTHENTICATED=1 for dev access until IAP is configured."
-  else
-    gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
-      --region="${REGION}" \
-      --project="${GCP_PROJECT_ID}" \
-      --member="serviceAccount:${IAP_SA}" \
-      --role="roles/run.invoker" \
-      --quiet || echo "WARNING: failed to bind IAP SA invoker"
-  fi
-
   echo "Removing public invoker binding (allUsers) if present..."
   gcloud run services remove-iam-policy-binding "${SERVICE_NAME}" \
     --region="${REGION}" \

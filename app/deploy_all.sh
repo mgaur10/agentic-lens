@@ -137,7 +137,22 @@ if [[ -f "$ROOT_DIR/scripts/grant_service_usage_to_engines.sh" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 9. Summary
+# 9. Deploy Glass UI and Load Balancer
+# ---------------------------------------------------------------------------
+echo "Deploying Glass UI and Load Balancer..."
+export GCP_PROJECT_ID=$PROJECT_ID
+export REGION=$REGION
+if ! "$ROOT_DIR/deploy-glass-ui.sh"; then
+  echo "Glass UI deploy failed."
+  exit 1
+fi
+if ! "$ROOT_DIR/setup_lb_iap.sh"; then
+  echo "Load Balancer setup failed."
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 10. Summary
 # ---------------------------------------------------------------------------
 echo ""
 echo "========== Deployment complete =========="
@@ -147,10 +162,5 @@ echo "To test the UI locally:"
 echo "  pip install -r requirements.txt  # if needed"
 echo "  uvicorn glass_ui_api:app --reload --host 0.0.0.0 --port 8000"
 echo "  Then open http://localhost:8000"
-echo ""
-echo "To deploy the Glass UI to Cloud Run:"
-echo "  export GCP_PROJECT_ID=$PROJECT_ID"
-echo "  export REGION=$REGION"
-echo "  ./deploy-glass-ui.sh"
 echo ""
 echo "If any step failed, see agentic-lens/DEPLOY.md and PRODUCTION_CHECKLIST.md."

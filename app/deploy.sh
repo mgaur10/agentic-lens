@@ -188,15 +188,15 @@ c["min_instances"] = deploy_cfg["min_instances"]
 c["max_instances"] = deploy_cfg["max_instances"]
 c["resource_limits"] = deploy_cfg["resource_limits"]
 c["container_concurrency"] = deploy_cfg["container_concurrency"]
-c["env_vars"] = {**(c.get("env_vars") or {}), "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "true", "GOOGLE_GENAI_USE_VERTEXAI": "true"}
+c["env_vars"] = {**(c.get("env_vars") or {}), "PYTHONPATH": f"/code/{sys.argv[4].strip()}_staged", "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true", "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY", "GOOGLE_GENAI_USE_VERTEXAI": "true"}
 if kms_key:
   c["encryption_spec"] = {"kms_key_name": kms_key}
 else:
   c.pop("encryption_spec", None)
 with open(path, "w") as f: json.dump(c, f, indent=2)
-' "$config_file" "$DEPLOY_CONFIG" "$kms_key" 2>/dev/null || true
+' "$config_file" "$DEPLOY_CONFIG" "$kms_key" "$agent" 2>/dev/null || true
     else
-      base_json="{\"identity_type\": \"AGENT_IDENTITY\", \"min_instances\": 1, \"max_instances\": 2, \"resource_limits\": {\"cpu\": \"4\", \"memory\": \"8Gi\"}, \"container_concurrency\": 2, \"env_vars\": {\"GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY\": \"true\", \"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT\": \"true\", \"GOOGLE_GENAI_USE_VERTEXAI\": \"true\"}}"
+      base_json="{\"identity_type\": \"AGENT_IDENTITY\", \"min_instances\": 1, \"max_instances\": 2, \"resource_limits\": {\"cpu\": \"4\", \"memory\": \"8Gi\"}, \"container_concurrency\": 2, \"env_vars\": {\"PYTHONPATH\": \"/code/${agent}_staged\", \"GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY\": \"true\", \"OTEL_SEMCONV_STABILITY_OPT_IN\": \"gen_ai_latest_experimental\", \"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT\": \"EVENT_ONLY\", \"GOOGLE_GENAI_USE_VERTEXAI\": \"true\"}}"
       echo "${base_json}" > "$config_file"
       if [[ -n "$kms_key" ]]; then
         python3 -c "
@@ -353,7 +353,7 @@ deploy_one() {
     deploy_root="$sup_bundle/ws"
     deploy_relpath="agents/supervisor"
   fi
-  if (cd "$deploy_root" && $adk_wrap "$ADK_CMD" deploy agent_engine --project="$PROJECT_ID" --region="$REGION" $adk_extra "$deploy_relpath" 2>&1) > "$deploy_out"; then
+  if (cd "$deploy_root" && $adk_wrap "$ADK_CMD" deploy agent_engine --project="$PROJECT_ID" --region="$REGION" --temp_folder="${agent}_staged" $adk_extra "$deploy_relpath" 2>&1) > "$deploy_out"; then
     if grep -qE "Failed to create Agent Engine|failed to start and cannot serve traffic|'code': 13|Please refer to our documentation.*troubleshooting|Deploy failed|not available in region" "$deploy_out" 2>/dev/null; then
       cat "$deploy_out" >&2
       rm -f "$deploy_out"
@@ -405,6 +405,17 @@ deploy_one_with_result() {
 
 export ADK_DIR ADK_CMD PROJECT_ID REGION AGENTS_DIR result_dir ORG_ID DEBUG_LOG
 export -f deploy_one deploy_one_with_result _debug_log
+
+# ----- PRE-FLIGHT GUARDRAILS -----
+_preflight_script="$ROOT_DIR/scripts/run_preflight_guardrails.py"
+if [[ -f "$_preflight_script" ]]; then
+  if [[ -x "$ADK_DIR/.venv/bin/python" ]]; then
+    "$ADK_DIR/.venv/bin/python" "$_preflight_script" "$AGENTS_DIR" "${AGENTS[@]}" || exit 1
+  else
+    python3 "$_preflight_script" "$AGENTS_DIR" "${AGENTS[@]}" || exit 1
+  fi
+fi
+# ---------------------------------
 
 echo "Deploying ${#AGENTS[@]} agents in parallel (max $MAX_PARALLEL at a time)..."
 # #region agent log

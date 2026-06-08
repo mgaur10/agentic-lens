@@ -367,3 +367,49 @@ def test_engine_ok_false_returns_engine_unavailable(client: TestClient) -> None:
     assert data["department"] == "Supervisor"
     assert "Agent Engine is offline or not configured" in data["answer"]
     assert "Engine unavailable" in "\n".join(data["execution_log"])
+
+
+def test_query_deidentification_sanitization_flows_to_supervisor(client: TestClient) -> None:
+    calls = []
+    def _route(user_message, **_kw):
+        calls.append(user_message)
+        return {"direct_response": f"De-identified response for: {user_message}"}
+
+    sanitized = "Hello, my email is [EMAIL_ADDRESS]"
+    def _scan_deidentified(text, level):
+        return {
+            "safe": True,
+            "ran": True,
+            "sanitized_prompt": sanitized,
+            "armor_summary": "Passed with de-identification",
+            "template": "security-high",
+        }
+
+    pid = str(uuid.uuid4())
+    with patch.multiple(
+        glass_ui_api,
+        scan_prompt=_scan_deidentified,
+        is_agent_engine_configured=lambda: True,
+        get_engine_id_map=lambda: _FAKE_MAP,
+        get_supervisor_routing=_route,
+    ):
+        r = client.post(
+            "/api/query",
+            json={
+                "message": "Hello, my email is test@google.com",
+                "session_id": pid,
+                "armor_enabled": True,
+                "armor_level": "high",
+            },
+        )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert sanitized in data["answer"]
+    assert len(calls) == 1
+    # Check that supervisor message contains the sanitized version
+    assert sanitized in calls[0]
+    # Check that logging captured the de-identification
+    log_messages = [x["message"] for x in data["session_logs"] if "message" in x]
+    assert any("Prompt de-identified" in msg for msg in log_messages)
+

@@ -20,17 +20,25 @@ except Exception:
             self.code = _code
 
 try:
-    from .telemetry import get_tracer, inject_w3c_headers
+    from opentelemetry import trace
+    tracer = trace.get_tracer(__name__)
 except ImportError:
-    from telemetry import get_tracer, inject_w3c_headers
+    class DummyTracer:
+        def start_as_current_span(self, name, *args, **kwargs):
+            import contextlib
+            @contextlib.contextmanager
+            def dummy_span():
+                yield None
+            return dummy_span()
+    tracer = DummyTracer()
+
+def inject_w3c_headers(kwargs):
+    pass
 
 logger = logging.getLogger(__name__)
-tracer = get_tracer()
 
-try:
-    from .vertex_init import init_vertexai as _init_vertexai
-except ImportError:
-    from vertex_init import init_vertexai as _init_vertexai
+def _init_vertexai(*args, **kwargs):
+    pass
 
 _USER_ID = "eng_lead"
 _MAX_REVIEW_RETRIES = 3
@@ -347,11 +355,14 @@ def _call_engine(engine_name: str, message: str, session_id: Optional[str] = Non
                 else:
                     raise
             texts = []
-            for ev in stream:
-                _collect_from_event(ev, texts)
+            try:
+                for ev in stream:
+                    _collect_from_event(ev, texts)
+            except Exception as e_stream_iter:
+                logger.warning("Stream iteration failed (possibly gRPC END_STREAM bug): %s. Falling back to query()", e_stream_iter)
             if texts:
                 return "\n".join(texts).strip()
-            # Fallback: blocking query when stream yielded no text/result (e.g. different event shape)
+            # Fallback: blocking query when stream yielded no text/result or failed
             try:
                 response = engine.query(**kwargs)
                 _collect_from_event(response, texts)
