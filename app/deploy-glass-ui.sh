@@ -102,6 +102,12 @@ gcloud run deploy "${SERVICE_NAME}" \
 PROJECT_NUMBER="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(projectNumber)')"
 IAP_SA="service-${PROJECT_NUMBER}@gcp-sa-iap.iam.gserviceaccount.com"
 
+echo "Ensuring the Cloud Run default compute service account has Vertex AI access..."
+gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/aiplatform.user" \
+  --condition=None --quiet >/dev/null 2>&1 || true
+
 if [[ -n "${GLASS_UI_EXTRA_INVOKERS// /}" ]]; then
   echo "Adding extra Cloud Run invokers (GLASS_UI_EXTRA_INVOKERS)..."
   _IFS=$IFS
