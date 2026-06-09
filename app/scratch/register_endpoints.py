@@ -3,7 +3,7 @@ import json
 import subprocess
 import sys
 
-PROJECT_ID = "agentic-ai-lens"
+PROJECT_ID = sys.argv[1] if len(sys.argv) > 1 else "agentic-ai-lens"
 LOCATION = "us-central1"
 BASE_URL = f"https://agentregistry.googleapis.com/v1alpha/projects/{PROJECT_ID}/locations/{LOCATION}"
 
@@ -121,6 +121,24 @@ services = [
         "displayName": "Terraform",
         "description": "HashiCorp Terraform Registry",
         "url": "https://terraform.io"
+    },
+    {
+        "id": "secretmanager",
+        "displayName": "Secret Manager",
+        "description": "Google Cloud Secret Manager API",
+        "url": "https://secretmanager.googleapis.com"
+    },
+    {
+        "id": "cloudasset",
+        "displayName": "Cloud Asset Inventory",
+        "description": "Google Cloud Asset API",
+        "url": "https://cloudasset.googleapis.com"
+    },
+    {
+        "id": "discoveryengine",
+        "displayName": "Discovery Engine",
+        "description": "Google Cloud Discovery Engine API",
+        "url": "https://discoveryengine.googleapis.com"
     }
 ]
 
