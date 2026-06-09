@@ -430,24 +430,20 @@ def supervisor_before_model_callback(callback_context, llm_request: LlmRequest) 
     )
     return LlmResponse(content=content)
 
-root_agent = LlmAgent(
+class SupervisorAgent(LlmAgent):
+    def query(self, message: str, session_id: str = None, **kwargs) -> str:
+        import json
+        from src.router import reason
+        # Delegate to the deterministic router instead of the ADK run method, since this agent doesn't need LLM calls
+        res = reason(message, security_level="off", session_id=session_id)
+        return json.dumps(res)
+
+    def stream_query(self, message: str, session_id: str = None, **kwargs):
+        yield self.query(message=message, session_id=session_id, **kwargs)
+
+root_agent = SupervisorAgent(
     name="agentic_prism_supervisor",
     model="gemini-2.5-flash",
     instruction=ROUTING_PROMPT,
     before_model_callback=supervisor_before_model_callback,
 )
-
-# [BUGFIX] The Agent Gateway strictly expects a 'query' or 'stream_query' method on the Reasoning Engine.
-# LlmAgent defaults to 'run', so we monkey-patch it here to ensure Vertex AI exports the required methods.
-def _supervisor_query(self, message: str, session_id: str = None, **kwargs) -> str:
-    import json
-    from src.router import reason
-    # Delegate to the deterministic router instead of the ADK run method, since this agent doesn't need LLM calls
-    res = reason(message, security_level="off", session_id=session_id)
-    return json.dumps(res)
-
-def _supervisor_stream_query(self, message: str, session_id: str = None, **kwargs):
-    yield self.query(message=message, session_id=session_id, **kwargs)
-
-LlmAgent.query = _supervisor_query
-LlmAgent.stream_query = _supervisor_stream_query
