@@ -496,8 +496,12 @@ def _execute_query_request(req: QueryRequest) -> QueryResponse:
     current_turn: int = sess["turn"]
     log_event("query_start", session_id=session_id, turn=current_turn)
 
-    # Security level from request (default medium, allow off/high)
+    # Security level from request (default medium, allow off/high).
+    # IMPORTANT: armor_enabled=None means "not sent by frontend" — treat as ENABLED.
+    # Only explicitly setting armor_enabled=False should disable security.
     security_level = (req.armor_level or "medium").lower()
+    if req.armor_enabled is False:
+        security_level = "off"
 
     execution_log: List[str] = []
 
@@ -564,33 +568,37 @@ def _execute_query_request(req: QueryRequest) -> QueryResponse:
     else:
         add_exec_step("Step 1 | Security | Model Armor: disabled")
 
-    # Security Guard
-    is_safe, guard_msg = _guard.validate(user_input)
-    if not is_safe:
+    # Security Guard — only runs when armor is enabled.
+    # When toggle is OFF, the Agent Gateway handles security at the network layer.
+    if security_level == "off":
+        add_exec_step("Step 2 | Security | Security Guard: disabled")
+    else:
+        is_safe, guard_msg = _guard.validate(user_input)
+        if not is_safe:
+            _append_log(
+                session_id,
+                message=f"🚨 Security Guard: BLOCKED ({guard_msg})",
+                log_type="security",
+                payload=None,
+                turn=current_turn,
+            )
+            add_exec_step("Step 2 | Security | Security Guard: blocked request")
+            return QueryResponse(
+                session_id=session_id,
+                lens_request_id=get_lens_request_id(),
+                answer=f"🚫 **Blocked by Security Guard:** {guard_msg}",
+                guard_blocked=True,
+                execution_log=execution_log,
+                session_logs=list(sess["logs"]),
+            )
         _append_log(
             session_id,
-            message=f"🚨 Security Guard: BLOCKED ({guard_msg})",
+            message=f"✅ Security Guard: {guard_msg}",
             log_type="security",
             payload=None,
             turn=current_turn,
         )
-        add_exec_step("Step 2 | Security | Security Guard: blocked request")
-        return QueryResponse(
-            session_id=session_id,
-            lens_request_id=get_lens_request_id(),
-            answer=f"🚫 **Blocked by Security Guard:** {guard_msg}",
-            guard_blocked=True,
-            execution_log=execution_log,
-            session_logs=list(sess["logs"]),
-        )
-    _append_log(
-        session_id,
-        message=f"✅ Security Guard: {guard_msg}",
-        log_type="security",
-        payload=None,
-        turn=current_turn,
-    )
-    add_exec_step("Step 2 | Security | Security Guard: input safe")
+        add_exec_step("Step 2 | Security | Security Guard: input safe")
 
     # Default values
     routed_department = "Chat"
