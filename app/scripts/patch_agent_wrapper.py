@@ -1,5 +1,6 @@
 import os
 import glob
+import re
 
 # Resolve paths relative to this script, not the working directory
 # This script lives at: agentic-lens/app/scripts/patch_agent_wrapper.py
@@ -7,43 +8,34 @@ import glob
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 AGENTS_DIR = os.path.join(SCRIPT_DIR, "..", "agentic-lens", "agents")
 
-WRAPPER_CODE = """
+# ──────────────────────────────────────────────────────────────────────────────
+# NOTE: VertexGatewayWrapper is NO LONGER USED.
+#
+# The previous approach wrapped root_agent in a plain Python class to expose
+# 'query' and 'stream_query'. This broke AdkApp.stream_query() because
+# AdkApp internally calls ctx.agent.run_async(ctx), which only exists on
+# LlmAgent subclasses — not on the plain wrapper.
+#
+# Method registration is handled by patch_cli.py which patches
+# _AGENT_ENGINE_CLASS_METHODS in the ADK's cli_deploy.py.
+# AdkApp already exposes stream_query(user_id, message) via its internal runner.
+#
+# This script now REMOVES any previously injected VertexGatewayWrapper blocks
+# from agent.py files to clean up any prior builds that injected it.
+# ──────────────────────────────────────────────────────────────────────────────
 
-# --- Vertex Gateway Wrapper ---
-# Bypasses the Vertex AI 1.75.0 LlmAgent session memory interceptor
-# to explicitly expose 'query' and 'stream_query' for the gateway API.
-# A plain Python class (not LlmAgent subclass) causes Vertex AI to use
-# standard method discovery instead of forcing the session memory wrapper.
-class VertexGatewayWrapper:
-    def __init__(self, agent):
-        self._agent = agent
-
-    def set_up(self):
-        if hasattr(self._agent, "set_up"):
-            self._agent.set_up()
-
-    def query(self, message: str, session_id: str = None, **kwargs) -> str:
-        if hasattr(self._agent, "query"):
-            return self._agent.query(message=message, session_id=session_id, **kwargs)
-        return str(self._agent(message))
-
-    def stream_query(self, message: str, session_id: str = None, **kwargs):
-        if hasattr(self._agent, "stream_query"):
-            for chunk in self._agent.stream_query(message=message, session_id=session_id, **kwargs):
-                yield chunk
-        else:
-            yield self.query(message=message, session_id=session_id, **kwargs)
-
-# Wrap the root agent so Vertex AI introspection sees standard methods
-if 'root_agent' in dir() and not isinstance(root_agent, VertexGatewayWrapper):
-    root_agent = VertexGatewayWrapper(root_agent)
-"""
+# Pattern to strip the injected VertexGatewayWrapper block (if present)
+WRAPPER_PATTERN = re.compile(
+    r'\n*# --- Vertex Gateway Wrapper ---.*?'
+    r'if .root_agent. in dir\(\).*?root_agent = VertexGatewayWrapper\(root_agent\)\n?',
+    re.DOTALL
+)
 
 def main():
     pattern = os.path.join(AGENTS_DIR, "*", "agent.py")
     agent_files = glob.glob(pattern)
     print(f"[patch_agent_wrapper] Scanning: {pattern}")
-    print(f"[patch_agent_wrapper] Found {len(agent_files)} agent files: {agent_files}")
+    print(f"[patch_agent_wrapper] Found {len(agent_files)} agent files")
 
     if not agent_files:
         print("[patch_agent_wrapper] WARNING: No agent files found — check AGENTS_DIR path!")
@@ -55,12 +47,14 @@ def main():
         with open(fpath, "r") as f:
             content = f.read()
 
-        if "VertexGatewayWrapper" not in content:
-            with open(fpath, "a") as f:
-                f.write(WRAPPER_CODE)
-            print(f"[patch_agent_wrapper] ✅ Patched: {fpath}")
+        if "VertexGatewayWrapper" in content:
+            # Strip the old injected wrapper block
+            cleaned = WRAPPER_PATTERN.sub("", content)
+            with open(fpath, "w") as f:
+                f.write(cleaned)
+            print(f"[patch_agent_wrapper] ✅ Cleaned VertexGatewayWrapper from: {fpath}")
         else:
-            print(f"[patch_agent_wrapper] ⏭  Already patched: {fpath}")
+            print(f"[patch_agent_wrapper] ⏭  No wrapper found (clean): {fpath}")
 
 if __name__ == "__main__":
     main()
