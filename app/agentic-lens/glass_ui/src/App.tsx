@@ -203,7 +203,7 @@ const App: React.FC = () => {
   const [telemetrySubmitted, setTelemetrySubmitted] = useState(getTelemetrySubmitted);
   const [status, setStatus] = useState<OmnibarStatus>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [armorEnabled, setArmorEnabled] = useState<boolean>(true);
+  const [armorEnabled, setArmorEnabled] = useState<boolean>(false);
   const [armorLevel, setArmorLevel] = useState<ArmorLevel>("medium");
   const [messages, setMessages] = useState<
     {
