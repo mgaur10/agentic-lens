@@ -1035,6 +1035,24 @@ def _is_events_engine_id(engine_id: str) -> bool:
     return "events" in eid.lower()
 
 
+def _is_chat_engine_id(engine_id: str) -> bool:
+    """True when ``engine_id`` refers to the Chat Agent Engine.
+
+    Tool function_response results (e.g. raw fetch_url dumps) are suppressed
+    from the streaming output so users only see the AI's synthesized summary.
+    """
+    eid = (engine_id or "").strip()
+    if not eid:
+        return False
+    configured = (os.getenv(CHAT_ENGINE_ID_ENV) or "").strip()
+    rid = eid.rsplit("/", 1)[-1]
+    if configured:
+        cr = configured.rsplit("/", 1)[-1]
+        if eid == configured or cr == rid:
+            return True
+    return "chat" in eid.lower()
+
+
 _DEFAULT_USER_ID = "prism-ui"
 
 # Map Supervisor output (target_agent string) -> Engine resource name for client-side relay
@@ -1514,7 +1532,7 @@ def call_agent_engine(
                     os.getenv("GCP_LOCATION")
                     or os.getenv("GOOGLE_CLOUD_LOCATION")
                     or os.getenv("REGION")
-                    or "us-west1"
+                    or "us-central1"  # engines are deployed to us-central1
                 ).strip()
                 if not project:
                     return ("⚠️ GCP_PROJECT_ID / GOOGLE_CLOUD_PROJECT not set.", eff_session)
@@ -1537,7 +1555,10 @@ def call_agent_engine(
                 engine = agent_engines.get(engine_id)
                 vertex_sid_out: Optional[str] = eff_session
                 texts = []
-                _inc_tool_result = not _is_events_engine_id(engine_id)
+                _inc_tool_result = (
+                    not _is_events_engine_id(engine_id)
+                    and not _is_chat_engine_id(engine_id)
+                )
                 debug_stream = os.getenv(_DEBUG_STREAM_ENV, "").strip().lower() in ("1", "true", "yes")
                 event_count = 0
                 stream_failed_value_error = False

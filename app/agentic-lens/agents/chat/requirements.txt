@@ -3,6 +3,9 @@ google-cloud-aiplatform>=1.70.0
 google-adk>=1.5.0
 deprecated>=1.2.0
 
+# Web content extraction (smart article parsing, discards nav/sidebar/footer)
+trafilatura>=1.12.0
+
 # Utilities (explicitly include to avoid ADK/serialization issues)
 pydantic>=2.9.0
 cloudpickle>=2.0.0,<3
