@@ -536,9 +536,11 @@ def _execute_query_request(req: QueryRequest) -> QueryResponse:
     current_turn: int = sess["turn"]
     log_event("query_start", session_id=session_id, turn=current_turn)
 
-    # Security level from request (default medium, allow off/high)
+    # Security level from request (default medium, allow off/high).
+    # IMPORTANT: armor_enabled=None means "not sent by frontend" — treat as ENABLED.
+    # Only explicitly setting armor_enabled=False should disable security.
     security_level = (req.armor_level or "medium").lower()
-    if not req.armor_enabled:
+    if req.armor_enabled is False:
         security_level = "off"
 
     execution_log: List[str] = []
