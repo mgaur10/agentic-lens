@@ -1095,7 +1095,7 @@ def _get_engine_by_display_name(target_name: str) -> Optional[str]:
             os.getenv("GCP_LOCATION")
             or os.getenv("GOOGLE_CLOUD_LOCATION")
             or os.getenv("REGION")
-            or "us-west1"
+            or "us-central1"  # engines are deployed to us-central1
         ).strip()
         
         if not project:
@@ -1292,7 +1292,7 @@ def _get_supervisor_routing_once(
         os.getenv("GCP_LOCATION")
         or os.getenv("GOOGLE_CLOUD_LOCATION")
         or os.getenv("REGION")
-        or "us-west1"
+        or "us-central1"  # engines are deployed to us-central1
     ).strip()
     if not project:
         return {"agent": "BLOCK", "response": "GCP_PROJECT_ID / GOOGLE_CLOUD_PROJECT not set."}
