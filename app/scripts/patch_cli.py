@@ -1,3 +1,4 @@
+import re
 import sys
 
 def main():
@@ -33,23 +34,28 @@ def main():
     # OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT).
     # Fix: MERGE cli/env-file vars ON TOP of the config-file vars so nothing is lost.
     # ── Patch 2 (robust): Fix env_vars OVERWRITE → MERGE ────────────────────
-    # Targets the SINGLE SPECIFIC LINE that overwrites all config env_vars.
-    # Using a single-line match is version-agnostic (handles any indentation
-    # or surrounding-code changes across google-adk versions).
-    # We try both single-quote and double-quote dict key variants.
+    # Detects the actual indentation of the target line using regex so the
+    # replacement lines are indented consistently — avoids IndentationError
+    # caused by hardcoding a fixed indent that differs from the file's style.
     patch2_applied = False
     for q in ("'", '"'):
         # The exact overwrite line (any leading indent) — only the assignment,
         # NOT the fallback line `agent_config[x] = agent_config.get(x, env_vars)`
-        old_line = f"agent_config[{q}env_vars{q}] = env_vars"
-        new_lines = (
-            f"_ev_org_merged = {{**(agent_config.get({q}env_vars{q}) or {{}}), **env_vars}}\n"
-            f"        agent_config[{q}env_vars{q}] = _ev_org_merged\n"
-            f"        print(f'[org-policy-patch] env_vars merged: {{sorted(_ev_org_merged.keys())}}')"
+        old_line_bare = f"agent_config[{q}env_vars{q}] = env_vars"
+        pattern = re.compile(
+            rf'^([ \t]*)({re.escape(old_line_bare)})$',
+            re.MULTILINE
         )
-        if old_line in patched_text:
-            patched_text = patched_text.replace(old_line, new_lines, 1)
-            print(f"✅ Patch 2: env_vars overwrite → merge (key quote={q!r}) — OTEL vars preserved")
+        m = pattern.search(patched_text)
+        if m:
+            indent = m.group(1)  # preserve actual indentation from the file
+            replacement = (
+                f"{indent}_ev_org_merged = {{**(agent_config.get({q}env_vars{q}) or {{}}), **env_vars}}\n"
+                f"{indent}agent_config[{q}env_vars{q}] = _ev_org_merged\n"
+                f"{indent}print(f'[org-policy-patch] env_vars merged: {{sorted(_ev_org_merged.keys())}}')\n"
+            )
+            patched_text = pattern.sub(replacement, patched_text, count=1)
+            print(f"✅ Patch 2: env_vars overwrite → merge (key quote={q!r}, indent={indent!r}) — OTEL vars preserved")
             patch2_applied = True
             break
 
