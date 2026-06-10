@@ -32,31 +32,37 @@ def main():
     # two other required OTEL vars (OTEL_SEMCONV_STABILITY_OPT_IN and
     # OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT).
     # Fix: MERGE cli/env-file vars ON TOP of the config-file vars so nothing is lost.
-    OLD_OVERWRITE = (
-        "    if env_vars:\n"
-        "      if 'env_vars' in agent_config:\n"
-        "        click.echo(\n"
-        "            f'Overriding env_vars in agent engine config with {env_vars}'\n"
-        "        )\n"
-        "      agent_config['env_vars'] = env_vars"
-    )
-    NEW_MERGE = (
-        "    if env_vars:\n"
-        "      if 'env_vars' in agent_config and isinstance(agent_config.get('env_vars'), dict):\n"
-        "        # [org-policy-patch] MERGE: keep all config-file vars, apply cli/env-file vars on top\n"
-        "        _merged = dict(agent_config['env_vars'])\n"
-        "        _merged.update(env_vars)\n"
-        "        agent_config['env_vars'] = _merged\n"
-        "        click.echo(f'[org-policy-patch] Merged env_vars ({len(_merged)} vars): {sorted(_merged.keys())}')\n"
-        "      else:\n"
-        "        agent_config['env_vars'] = env_vars"
-    )
-    if OLD_OVERWRITE in patched_text:
-        patched_text = patched_text.replace(OLD_OVERWRITE, NEW_MERGE, 1)
-        print("✅ Patch 2: env_vars overwrite → merge (OTEL vars preserved for org-policy compliance)")
-    else:
-        print("⚠️  Patch 2: env_vars overwrite pattern not found — cli_deploy.py may have changed layout")
-        print("           Check google-adk version and update patch_cli.py if needed.")
+    # ── Patch 2 (robust): Fix env_vars OVERWRITE → MERGE ────────────────────
+    # Targets the SINGLE SPECIFIC LINE that overwrites all config env_vars.
+    # Using a single-line match is version-agnostic (handles any indentation
+    # or surrounding-code changes across google-adk versions).
+    # We try both single-quote and double-quote dict key variants.
+    patch2_applied = False
+    for q in ("'", '"'):
+        # The exact overwrite line (any leading indent) — only the assignment,
+        # NOT the fallback line `agent_config[x] = agent_config.get(x, env_vars)`
+        old_line = f"agent_config[{q}env_vars{q}] = env_vars"
+        new_lines = (
+            f"_ev_org_merged = {{**(agent_config.get({q}env_vars{q}) or {{}}), **env_vars}}\n"
+            f"        agent_config[{q}env_vars{q}] = _ev_org_merged\n"
+            f"        print(f'[org-policy-patch] env_vars merged: {{sorted(_ev_org_merged.keys())}}')"
+        )
+        if old_line in patched_text:
+            patched_text = patched_text.replace(old_line, new_lines, 1)
+            print(f"✅ Patch 2: env_vars overwrite → merge (key quote={q!r}) — OTEL vars preserved")
+            patch2_applied = True
+            break
+
+    if not patch2_applied:
+        print("⚠️  Patch 2: FAILED — 'agent_config[env_vars] = env_vars' not found in cli_deploy.py")
+        print("   Dumping first 3 occurrences of 'env_vars' lines for diagnosis:")
+        count = 0
+        for i, line in enumerate(patched_text.splitlines()):
+            if 'env_vars' in line and 'agent_config' in line:
+                print(f"   line {i+1}: {line!r}")
+                count += 1
+                if count >= 3:
+                    break
 
     with open(path, "w") as f:
         f.write(patched_text)
