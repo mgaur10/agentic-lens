@@ -40,7 +40,9 @@ def main():
     # #region agent log
     _log("get_engine_id_entry", "get_agent_engine_id.py:main", "H1", {"project": project, "region": region, "target": target_name})
     # #endregion
+    # Canonical form with hyphens (legacy matching), and with underscores (Vertex AI stores folder name as-is)
     target_clean = target_name.strip().lower().replace("_", "-")
+    target_under = target_name.strip().lower().replace("-", "_")  # e.g. xray_specialist
     try:
         import vertexai
         try:
@@ -77,7 +79,10 @@ def main():
             except Exception:
                 pass
 
-        # Collect all matching engines; prefer ADK-deployed (agentic-lens* / agentic_lens*) over bootstrap placeholders
+        # Collect all matching engines.
+        # Vertex AI display name = ADK agent folder name (underscores preserved exactly).
+        # target_clean has underscores→hyphens; target_under keeps underscores.
+        # We match both forms so eng_lead, xray_specialist etc. are found correctly.
         matches = []
         for e in engines:
             gca = getattr(e, "_gca_resource", None)
@@ -86,14 +91,32 @@ def main():
                 or getattr(e, "display_name", None)
                 or ""
             )
-            display_lower = (display or "").strip().lower().replace("_", "-")
+            display_raw = (display or "").strip()
+            # Normalise display to both hyphen and underscore forms
+            display_hyph = display_raw.lower().replace("_", "-")
+            display_und  = display_raw.lower().replace("-", "_")
             out = getattr(e, "resource_name", None) or (gca.name if gca else None)
             if not out:
                 continue
-            short_target = target_clean.replace("agentic-lens-", "").replace("agentic_lens_", "")
-            if display_lower == target_clean or display_lower.endswith(f"-{target_clean}") or display_lower == short_target:
-                display_raw = (display or "").strip()
-                is_adk = "agentic-lens" in display_raw.lower() or "agentic_lens" in display_raw.lower()
+            # Strip known prefixes for short-form matching
+            def _strip_prefix(s: str) -> str:
+                for pfx in ("agentic-lens-", "agentic_lens_", "agentic-prism-", "agentic_prism_"):
+                    if s.startswith(pfx):
+                        return s[len(pfx):]
+                return s
+            short_hyph = _strip_prefix(display_hyph)
+            short_und  = _strip_prefix(display_und)
+            matched = (
+                display_hyph == target_clean        # hyphen form exact match
+                or display_und  == target_under     # underscore form exact match (primary fix)
+                or display_hyph.endswith(f"-{target_clean}")
+                or display_und.endswith(f"_{target_under}")
+                or short_hyph == target_clean
+                or short_und  == target_under
+            )
+            if matched:
+                is_adk = "agentic-lens" in display_raw.lower() or "agentic_lens" in display_raw.lower() \
+                          or "agentic-prism" in display_raw.lower() or "agentic_prism" in display_raw.lower()
                 matches.append((is_adk, out))
         if matches:
             # Prefer ADK-deployed engine (from deploy.sh) over bootstrap placeholder (from step 02)
