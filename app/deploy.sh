@@ -452,27 +452,27 @@ for agent in "${AGENTS[@]}"; do
   fi
 done
 
+# POST-DEPLOY: Always re-run merge_peer_engine_env now that all attempted engines
+# are live (even on partial failure). The pre-deploy call finds stale/blank IDs
+# because it runs before engines are replaced. This second call resolves IDs from
+# the freshly deployed engines so Cloud Run always gets correct peer configs.
+echo ""
+echo "🔗 Re-merging peer engine IDs from freshly deployed engines..."
+if [[ -f "$_merge_peer" ]]; then
+  if [[ -x "$ADK_DIR/.venv/bin/python" ]]; then
+    "$ADK_DIR/.venv/bin/python" "$_merge_peer" "$ROOT_DIR" && \
+      echo "✅ Peer engine IDs updated." || \
+      echo "⚠️  merge_peer_engine_env: some IDs still missing (non-fatal)."
+  else
+    python3 "$_merge_peer" "$ROOT_DIR" && \
+      echo "✅ Peer engine IDs updated." || \
+      echo "⚠️  merge_peer_engine_env: some IDs still missing (non-fatal)."
+  fi
+fi
+
 echo ""
 if [[ ${#failed_agents[@]} -eq 0 ]]; then
   echo "✅ All agents deployed successfully."
-
-  # POST-DEPLOY: Re-run merge_peer_engine_env now that all engines are live.
-  # The pre-deploy call (above) runs before agents are replaced, so during a
-  # redeploy it often finds blank/stale IDs and writes them into configs.
-  # This second call resolves IDs from the freshly deployed engines and
-  # overwrites the configs with correct values before Cloud Run deploys.
-  echo "🔗 Re-merging peer engine IDs from freshly deployed engines..."
-  if [[ -f "$_merge_peer" ]]; then
-    if [[ -x "$ADK_DIR/.venv/bin/python" ]]; then
-      "$ADK_DIR/.venv/bin/python" "$_merge_peer" "$ROOT_DIR" && \
-        echo "✅ Peer engine IDs updated." || \
-        echo "⚠️  merge_peer_engine_env post-deploy: some IDs still missing (non-fatal)."
-    else
-      python3 "$_merge_peer" "$ROOT_DIR" && \
-        echo "✅ Peer engine IDs updated." || \
-        echo "⚠️  merge_peer_engine_env post-deploy: some IDs still missing (non-fatal)."
-    fi
-  fi
 else
   echo "❌ Failed agents (${#failed_agents[@]}): ${failed_agents[*]}"
   echo "   Check Logs Explorer: Resource type = Vertex AI Reasoning Engine. Run: ./scripts/fetch_deploy_errors.sh 1"
