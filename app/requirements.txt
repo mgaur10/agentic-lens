@@ -1,4 +1,4 @@
-google-cloud-aiplatform==1.149.0  # pinned: matches local dev / agent/requirements.txt
+google-cloud-aiplatform>=1.38.0
 google-auth
 python-dotenv
 protobuf
