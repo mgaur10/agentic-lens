@@ -1528,11 +1528,63 @@ def orchestrate_xray(user_query: str, tool_context: ToolContext | None = None) -
     if (spec or "").strip().startswith("[Error"):
         diag.append(
             _xray_diag(
-                "Pipeline | X-Ray | specialist | FAILED | code=ENGINE_ERROR | msg=ee response"
+                "Pipeline | X-Ray | specialist | FAILED | code=ENGINE_ERROR | msg=see response"
             )
         )
+    elif not (spec or "").strip():
+        # Empty stream from specialist — mirrors auditor fallback chain.
+        diag.append(
+            _xray_diag(
+                "Pipeline | X-Ray | specialist | FAILED | code=EMPTY_STREAM | msg=no text from engine"
+            )
+        )
+        # Retry via direct specialist call (different code path, no repo_context overhead).
+        fb = _call_specialist(
+            (
+                "You are a Google Cloud IAM and security expert. Answer concisely in Markdown. "
+                "Do not ask clarifying questions.\n\nUser question:\n"
+                + (user_query or "").strip()
+            ),
+            session_id=_peer_sid,
+        )
+        if (fb or "").strip() and not (fb or "").strip().startswith("[Error"):
+            spec = fb
+            diag.append(
+                _xray_diag(
+                    "Pipeline | X-Ray | specialist_fallback | OK | code=OK | msg=answered via specialist retry"
+                )
+            )
+        else:
+            if (fb or "").strip().startswith("[Error"):
+                diag.append(
+                    _xray_diag(
+                        "Pipeline | X-Ray | specialist_fallback | FAILED | code=ENGINE_ERROR | msg=peer error"
+                    )
+                )
+            else:
+                diag.append(
+                    _xray_diag(
+                        "Pipeline | X-Ray | specialist_fallback | FAILED | code=EMPTY_STREAM | msg=no text"
+                    )
+                )
+            # Last resort: in-process Gemini call (same identity as xray_manager, no extra hop).
+            gem = _gemini_iam_advisory_fallback(user_query or "")
+            if (gem or "").strip():
+                spec = gem.strip()
+                diag.append(
+                    _xray_diag(
+                        "Pipeline | X-Ray | gemini_fallback | OK | code=OK | msg=in-process vertex"
+                    )
+                )
+            else:
+                diag.append(
+                    _xray_diag(
+                        "Pipeline | X-Ray | gemini_fallback | FAILED | code=EMPTY | msg=no text"
+                    )
+                )
     else:
         diag.append(
             _xray_diag("Pipeline | X-Ray | specialist | OK | code=OK | msg=response received")
         )
     return _xray_return(tool_context, spec, diag)
+
