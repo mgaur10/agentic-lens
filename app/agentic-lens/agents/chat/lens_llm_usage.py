@@ -117,7 +117,7 @@ def emit_llm_usage(
                 "status": "serialization_failed",
             }
         )
-    _logger.info(line)
+    print(line, flush=True)  # structured jsonPayload for Cloud Logging
 
 
 def emit_llm_usage_from_response(

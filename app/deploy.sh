@@ -191,14 +191,8 @@ c["max_instances"] = deploy_cfg["max_instances"]
 c["resource_limits"] = deploy_cfg["resource_limits"]
 c["container_concurrency"] = deploy_cfg["container_concurrency"]
 c["env_vars"] = {**(c.get("env_vars") or {}), "PYTHONPATH": f"/code/{sys.argv[4].strip()}_staged", "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true", "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY", "GOOGLE_GENAI_USE_VERTEXAI": "true"}
-c["agent_gateway_config"] = {
-  "client_to_agent_config": {
-    "agent_gateway": f"projects/{proj_id}/locations/{region}/agentGateways/gemini-corp-ingress-gateway"
-  },
-  "agent_to_anywhere_config": {
-    "agent_gateway": f"projects/{proj_id}/locations/{region}/agentGateways/gemini-corp-egress-gateway"
-  }
-}
+# agent_gateway_config removed — gemini-corp-ingress/egress-gateway no longer present in agentic-ai-lens
+c.pop("agent_gateway_config", None)
 if kms_key:
   c["encryption_spec"] = {"kms_key_name": kms_key}
 else:
@@ -206,7 +200,7 @@ else:
 with open(path, "w") as f: json.dump(c, f, indent=2)
 ' "$config_file" "$DEPLOY_CONFIG" "$kms_key" "$agent" "$PROJECT_ID" "$REGION" 2>/dev/null || true
     else
-      base_json="{\"identity_type\": \"AGENT_IDENTITY\", \"min_instances\": 1, \"max_instances\": 2, \"resource_limits\": {\"cpu\": \"4\", \"memory\": \"8Gi\"}, \"container_concurrency\": 2, \"env_vars\": {\"PYTHONPATH\": \"/code/${agent}_staged\", \"GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY\": \"true\", \"OTEL_SEMCONV_STABILITY_OPT_IN\": \"gen_ai_latest_experimental\", \"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT\": \"EVENT_ONLY\", \"GOOGLE_GENAI_USE_VERTEXAI\": \"true\"}, \"agent_gateway_config\": {\"client_to_agent_config\": {\"agent_gateway\": \"projects/${PROJECT_ID}/locations/${REGION}/agentGateways/gemini-corp-ingress-gateway\"}, \"agent_to_anywhere_config\": {\"agent_gateway\": \"projects/${PROJECT_ID}/locations/${REGION}/agentGateways/gemini-corp-egress-gateway\"}}}"
+      base_json="{\"identity_type\": \"AGENT_IDENTITY\", \"min_instances\": 1, \"max_instances\": 2, \"resource_limits\": {\"cpu\": \"4\", \"memory\": \"8Gi\"}, \"container_concurrency\": 2, \"env_vars\": {\"PYTHONPATH\": \"/code/${agent}_staged\", \"GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY\": \"true\", \"OTEL_SEMCONV_STABILITY_OPT_IN\": \"gen_ai_latest_experimental\", \"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT\": \"EVENT_ONLY\", \"GOOGLE_GENAI_USE_VERTEXAI\": \"true\"}}"
       echo "${base_json}" > "$config_file"
       if [[ -n "$kms_key" ]]; then
         python3 -c "
