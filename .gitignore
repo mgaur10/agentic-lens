@@ -44,7 +44,6 @@ tfplan
 !terraform.tfvars.example
 
 # --- Agent Engine deploy artifacts (per project) ---
-**/.agent_engine_config.json
 
 # --- Bundled app local DB / filled artifacts ---
 app/**/*.db

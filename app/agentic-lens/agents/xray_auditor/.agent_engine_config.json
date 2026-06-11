@@ -1,0 +1,29 @@
+{
+  "identity_type": "AGENT_IDENTITY",
+  "min_instances": 1,
+  "max_instances": 2,
+  "resource_limits": {
+    "cpu": "4",
+    "memory": "8Gi"
+  },
+  "container_concurrency": 2,
+  "env_vars": {
+    "PYTHONPATH": "/code/xray_auditor_staged",
+    "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
+    "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
+    "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY",
+    "GOOGLE_GENAI_USE_VERTEXAI": "true",
+    "GCP_PROJECT_ID": "agentic-ai-lens",
+    "GCP_LOCATION": "us-central1",
+    "REGION": "us-central1",
+    "GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES": "false"
+  },
+  "agent_gateway_config": {
+    "client_to_agent_config": {
+      "agent_gateway": "projects/agentic-ai-lens/locations/us-central1/agentGateways/gemini-corp-ingress-gateway"
+    },
+    "agent_to_anywhere_config": {
+      "agent_gateway": "projects/agentic-ai-lens/locations/us-central1/agentGateways/gemini-corp-egress-gateway"
+    }
+  }
+}
