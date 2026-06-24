@@ -25,13 +25,5 @@
     "GCP_LOCATION": "us-central1",
     "REGION": "us-central1",
     "GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES": "false"
-  },
-  "agent_gateway_config": {
-    "client_to_agent_config": {
-      "agent_gateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-ingress-gateway"
-    },
-    "agent_to_anywhere_config": {
-      "agent_gateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-egress-gateway"
-    }
   }
 }
