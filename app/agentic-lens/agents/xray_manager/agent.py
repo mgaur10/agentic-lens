@@ -399,49 +399,63 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-X-Ray Manager — Safe config loader.
-Filters deployment metadata so LlmAgent never receives forbidden fields (Pydantic ValidationError fix).
+X-Ray Manager — IAM Security Auditor orchestrator.
+Routes through Architect -> Specialist -> Auditor pipeline.
 """
 import os
-import yaml
+import sys
+
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
 from google.adk.agents import LlmAgent
-from google.adk.agents.llm_agent_config import LlmAgentConfig
+from google.adk.tools import FunctionTool
+try:
+    from src.manager import audit_iam
+except ImportError:
+    from manager import audit_iam
 
-DEFAULT_MODEL = "gemini-2.5-pro"
-_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields)
+root_agent = LlmAgent(
+    name="agentic_prism_xray_manager",
+    model="gemini-2.5-flash",
+    description="X-Ray Security Manager — orchestrates IAM audits via specialist pipeline.",
+    instruction=(
+        "You are the X-Ray Security Manager for Agentic-Prism.\n\n"
+        "Your mission: Orchestrate IAM security audits using the Architect, Specialist, "
+        "and Auditor pipeline.\n\n"
+        "When a user asks about:\n"
+        "- IAM permissions and roles\n"
+        "- Service account access\n"
+        "- 403 Forbidden errors\n"
+        "- Security policy questions\n"
+        "- Repository/code security analysis\n\n"
+        "Call `audit_iam` with the user's request. Return the full audit report.\n"
+        "Do not summarize or modify the report — return it in full."
+    ),
+    tools=[FunctionTool(audit_iam)],
+)
 
-
-def _sanitize_agent_name(sanitized: dict, default: str) -> None:
-    """Convert kebab-case to valid Python identifier (hyphens -> underscores)."""
-    name = sanitized.get("name")
-    sanitized["name"] = (name if isinstance(name, str) else default).replace("-", "_")
-
-
-class SafeLlmAgent(LlmAgent):
-    """
-    Safely loads the agent by filtering out deployment metadata (runtime, identity, etc.)
-    before passing config to LlmAgent.
-    """
-
-    @classmethod
-    def from_config(cls, config, config_abs_path: str):
-        if isinstance(config, dict):
-            sanitized = {k: v for k, v in config.items() if k in _ALLOWED_KEYS}
-            sanitized.setdefault("model", DEFAULT_MODEL)
-            _sanitize_agent_name(sanitized, "xray_manager")
-            config = LlmAgentConfig.model_validate(sanitized)
-        return LlmAgent.from_config(config, config_abs_path)
-
-
-def _safe_load_root_agent(config_path: str) -> LlmAgent:
-    abs_path = os.path.abspath(config_path)
-    with open(abs_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    sanitized = {k: v for k, v in data.items() if k in _ALLOWED_KEYS}
-    sanitized["model"] = sanitized.get("model") or DEFAULT_MODEL
-    _sanitize_agent_name(sanitized, "xray_manager")
-    config = LlmAgentConfig.model_validate(sanitized)
-    return LlmAgent.from_config(config, abs_path)
-
-
-root_agent = _safe_load_root_agent(os.path.join(os.path.dirname(__file__), "root_agent.yaml"))
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_xray_manager",
+                department="xray",
+                agent_role="xray_manager",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

@@ -400,32 +400,70 @@ else:
 
 """
 Eng-Scout agent — safe config loader.
-Loads root_agent.yaml and passes only LlmAgentConfig-allowed fields to avoid Pydantic ValidationError.
+Loads root_agent.yaml and passes only LlmAgentConfig-allowed fields.
 """
 import os
 import yaml
 from google.adk.agents import LlmAgent
 from google.adk.agents.llm_agent_config import LlmAgentConfig
 
-DEFAULT_MODEL = "gemini-2.5-flash"
-_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields)
+DEFAULT_MODEL = "gemini-2.5-pro"
+_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields.keys()) if hasattr(LlmAgentConfig, 'model_fields') else frozenset()
 
 
-def _sanitize_agent_name(sanitized: dict, default: str) -> None:
+def _sanitize_agent_name(name: str) -> str:
     """Convert kebab-case to valid Python identifier (hyphens -> underscores)."""
-    name = sanitized.get("name")
-    sanitized["name"] = (name if isinstance(name, str) else default).replace("-", "_")
+    return name.replace("-", "_")
 
 
-def _safe_load_root_agent(config_path: str) -> LlmAgent:
-    abs_path = os.path.abspath(config_path)
-    with open(abs_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    sanitized = {k: v for k, v in data.items() if k in _ALLOWED_KEYS}
-    sanitized["model"] = sanitized.get("model") or DEFAULT_MODEL
-    _sanitize_agent_name(sanitized, "agentic_prism_eng_scout")
-    config = LlmAgentConfig.model_validate(sanitized)
-    return LlmAgent.from_config(config, abs_path)
+def _safe_load_root_agent() -> LlmAgent:
+    config_path = os.path.join(os.path.dirname(__file__), "root_agent.yaml")
+    try:
+        with open(config_path) as f:
+            raw = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        raw = {}
+    sanitized = {
+        k: (_sanitize_agent_name(v) if k == "name" and isinstance(v, str) else v)
+        for k, v in raw.items()
+    }
+    if _ALLOWED_KEYS:
+        sanitized = {k: v for k, v in sanitized.items() if k in _ALLOWED_KEYS}
+    return LlmAgent(
+        name=sanitized.pop("name", "agentic_prism_eng_scout"),
+        model=sanitized.pop("model", DEFAULT_MODEL),
+        description=sanitized.pop("description", "Infrastructure architect"),
+        instruction=sanitized.pop("instruction", ""),
+        **{k: v for k, v in sanitized.items()},
+    )
 
 
-root_agent = _safe_load_root_agent(os.path.join(os.path.dirname(__file__), "config.yaml"))
+class EngScoutAgent(LlmAgent):
+    """EngScoutAgent — wraps LlmAgent for eng_scout."""
+
+
+root_agent = _safe_load_root_agent()
+
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_eng_scout",
+                department="engineering",
+                agent_role="eng_scout",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

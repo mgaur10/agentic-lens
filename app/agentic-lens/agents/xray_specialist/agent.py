@@ -399,49 +399,68 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-X-Ray Specialist — Safe config loader.
-Filters deployment metadata so LlmAgent never receives forbidden fields (Pydantic ValidationError fix).
+X-Ray Specialist — Detailed IAM permission checker.
+Second stage in the X-Ray pipeline: validates IAM assignments.
 """
 import os
-import yaml
+import sys
+
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
 from google.adk.agents import LlmAgent
-from google.adk.agents.llm_agent_config import LlmAgentConfig
+from google.adk.tools import FunctionTool
+try:
+    from src.tools import lookup_resource_iam
+except ImportError:
+    from tools import lookup_resource_iam
 
-DEFAULT_MODEL = "gemini-2.5-pro"
-_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields)
+root_agent = LlmAgent(
+    name="agentic_prism_xray_specialist",
+    model="gemini-2.5-pro",
+    description="X-Ray Specialist — verifies IAM assignments using Knowledge Base.",
+    instruction=(
+        "You are the X-Ray Specialist for Agentic-Prism.\n\n"
+        "Your mission: Perform detailed IAM permission verification.\n\n"
+        "You are the SECOND stage in the X-Ray pipeline.\n\n"
+        "Process:\n"
+        "1. Use `lookup_resource_iam` to get the actual IAM policy\n"
+        "2. Compare actual permissions against what's needed\n"
+        "3. Identify gaps, over-permissions, or misconfigurations\n"
+        "4. Provide specific recommendations\n\n"
+        "Format your response as:\n"
+        "## IAM Analysis\n"
+        "### Current Permissions\n"
+        "[what was found]\n"
+        "### Issues Found\n"
+        "[gaps, over-permissions, etc.]\n"
+        "### Recommendations\n"
+        "[specific gcloud/terraform commands to fix issues]\n"
+    ),
+    tools=[FunctionTool(lookup_resource_iam)],
+)
 
-
-def _sanitize_agent_name(sanitized: dict, default: str) -> None:
-    """Convert kebab-case to valid Python identifier (hyphens -> underscores)."""
-    name = sanitized.get("name")
-    sanitized["name"] = (name if isinstance(name, str) else default).replace("-", "_")
-
-
-class SafeLlmAgent(LlmAgent):
-    """
-    Safely loads the agent by filtering out deployment metadata (runtime, identity, etc.)
-    before passing config to LlmAgent.
-    """
-
-    @classmethod
-    def from_config(cls, config, config_abs_path: str):
-        if isinstance(config, dict):
-            sanitized = {k: v for k, v in config.items() if k in _ALLOWED_KEYS}
-            sanitized.setdefault("model", DEFAULT_MODEL)
-            _sanitize_agent_name(sanitized, "xray_specialist")
-            config = LlmAgentConfig.model_validate(sanitized)
-        return LlmAgent.from_config(config, config_abs_path)
-
-
-def _safe_load_root_agent(config_path: str) -> LlmAgent:
-    abs_path = os.path.abspath(config_path)
-    with open(abs_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    sanitized = {k: v for k, v in data.items() if k in _ALLOWED_KEYS}
-    sanitized["model"] = sanitized.get("model") or DEFAULT_MODEL
-    _sanitize_agent_name(sanitized, "xray_specialist")
-    config = LlmAgentConfig.model_validate(sanitized)
-    return LlmAgent.from_config(config, abs_path)
-
-
-root_agent = _safe_load_root_agent(os.path.join(os.path.dirname(__file__), "root_agent.yaml"))
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_xray_specialist",
+                department="xray",
+                agent_role="xray_specialist",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

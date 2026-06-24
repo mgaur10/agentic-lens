@@ -399,35 +399,39 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-X-Ray Auditor — Safe config loader.
-Filters deployment metadata so LlmAgent never receives forbidden fields.
+X-Ray Auditor — Independent QA Gatekeeper.
+Loads the root agent from auditor (read-only lookup tool, no learn).
 """
 import os
-import yaml
-from google.adk.agents import LlmAgent
-from google.adk.agents.llm_agent_config import LlmAgentConfig
+import sys
 
-DEFAULT_MODEL = "gemini-2.5-pro"
-_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields)
+_agent_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _agent_root)
 
+from auditor import get_root_agent
 
-def _sanitize_agent_name(sanitized: dict, default: str) -> None:
-    """Convert kebab-case to valid Python identifier (hyphens -> underscores)."""
-    name = sanitized.get("name")
-    sanitized["name"] = (name if isinstance(name, str) else default).replace("-", "_")
+root_agent = get_root_agent()
 
-
-def _safe_load_root_agent(config_path: str) -> LlmAgent:
-    abs_path = os.path.abspath(config_path)
-    with open(abs_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    sanitized = {k: v for k, v in data.items() if k in _ALLOWED_KEYS}
-    sanitized["model"] = sanitized.get("model") or DEFAULT_MODEL
-    _sanitize_agent_name(sanitized, "xray_auditor")
-    config = LlmAgentConfig.model_validate(sanitized)
-    # Note: We use LlmAgent.from_config instead of a custom class if standard behavior is sufficient.
-    # If custom logic is needed, we can define a SafeLlmAgent alias or subclass.
-    return LlmAgent.from_config(config, abs_path)
-
-
-root_agent = _safe_load_root_agent(os.path.join(os.path.dirname(__file__), "root_agent.yaml"))
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_xray_auditor",
+                department="xray",
+                agent_role="xray_auditor",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

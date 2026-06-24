@@ -1,0 +1,18 @@
+google-cloud-aiplatform>=1.88.0
+google-adk>=1.0.0
+cloudpickle>=2.0.0,<4
+pydantic>=2.9.0
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-gcp-trace
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-grpc
+opentelemetry-instrumentation-httpx
+opentelemetry-instrumentation-google-genai
+opentelemetry-exporter-gcp-logging
+PyYAML
+requests
+google-cloud-modelarmor>=0.1.0
+
+# A2A protocol support (required for --a2a flag in adk api_server)
+a2a-sdk>=0.3.4,<0.4

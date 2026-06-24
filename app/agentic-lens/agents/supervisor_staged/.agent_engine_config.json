@@ -1,0 +1,37 @@
+{
+  "identity_type": "AGENT_IDENTITY",
+  "min_instances": 1,
+  "max_instances": 2,
+  "resource_limits": {
+    "cpu": "4",
+    "memory": "8Gi"
+  },
+  "container_concurrency": 2,
+  "env_vars": {
+    "PYTHONPATH": "/code/supervisor_staged",
+    "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
+    "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
+    "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY",
+    "GOOGLE_GENAI_USE_VERTEXAI": "true",
+    "AGENTIC_LENS_ENGINE_XRAY_ARCHITECT": "projects/795375693569/locations/us-central1/reasoningEngines/4901898264288165888",
+    "AGENTIC_LENS_ENGINE_XRAY_SPECIALIST": "projects/795375693569/locations/us-central1/reasoningEngines/4512759108985683968",
+    "AGENTIC_LENS_ENGINE_XRAY_LIBRARIAN": "projects/795375693569/locations/us-central1/reasoningEngines/5007732855531372544",
+    "AGENTIC_LENS_ENGINE_XRAY_AUDITOR": "projects/795375693569/locations/us-central1/reasoningEngines/5667510200941150208",
+    "AGENTIC_LENS_ENGINE_SCOUT": "projects/795375693569/locations/us-central1/reasoningEngines/3375177990609567744",
+    "AGENTIC_LENS_ENGINE_CODER": "projects/795375693569/locations/us-central1/reasoningEngines/5471603617150533632",
+    "AGENTIC_LENS_ENGINE_QUALITY_AND_SECURITY_REVIEWER": "projects/795375693569/locations/us-central1/reasoningEngines/3165760607936839680",
+    "CHAT_ENGINE_ID": "projects/795375693569/locations/us-central1/reasoningEngines/8165178406783156224",
+    "GCP_PROJECT_ID": "agentic-security-prd",
+    "GCP_LOCATION": "us-central1",
+    "REGION": "us-central1",
+    "GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES": "false"
+  },
+  "agent_gateway_config": {
+    "client_to_agent_config": {
+      "agent_gateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-ingress-gateway"
+    },
+    "agent_to_anywhere_config": {
+      "agent_gateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-egress-gateway"
+    }
+  }
+}

@@ -13,25 +13,28 @@
     "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
     "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY",
     "GOOGLE_GENAI_USE_VERTEXAI": "true",
-    "AGENTIC_LENS_ENGINE_XRAY_ARCHITECT": "projects/795375693569/locations/us-central1/reasoningEngines/4901898264288165888",
-    "AGENTIC_LENS_ENGINE_XRAY_SPECIALIST": "projects/795375693569/locations/us-central1/reasoningEngines/4512759108985683968",
-    "AGENTIC_LENS_ENGINE_XRAY_LIBRARIAN": "projects/795375693569/locations/us-central1/reasoningEngines/5007732855531372544",
-    "AGENTIC_LENS_ENGINE_XRAY_AUDITOR": "projects/795375693569/locations/us-central1/reasoningEngines/5667510200941150208",
-    "AGENTIC_LENS_ENGINE_SCOUT": "projects/795375693569/locations/us-central1/reasoningEngines/3375177990609567744",
-    "AGENTIC_LENS_ENGINE_CODER": "projects/795375693569/locations/us-central1/reasoningEngines/5471603617150533632",
-    "AGENTIC_LENS_ENGINE_QUALITY_AND_SECURITY_REVIEWER": "projects/795375693569/locations/us-central1/reasoningEngines/3165760607936839680",
-    "CHAT_ENGINE_ID": "projects/795375693569/locations/us-central1/reasoningEngines/8165178406783156224",
-    "GCP_PROJECT_ID": "agentic-ai-lens",
+    "AGENTIC_LENS_ENGINE_XRAY_ARCHITECT": "projects/446959546335/locations/us-central1/reasoningEngines/4485627560058683392",
+    "AGENTIC_LENS_ENGINE_XRAY_SPECIALIST": "projects/446959546335/locations/us-central1/reasoningEngines/8764047206060654592",
+    "AGENTIC_LENS_ENGINE_XRAY_LIBRARIAN": "projects/446959546335/locations/us-central1/reasoningEngines/5007732855531372544",
+    "AGENTIC_LENS_ENGINE_XRAY_AUDITOR": "projects/446959546335/locations/us-central1/reasoningEngines/7169772937971499008",
+    "AGENTIC_LENS_ENGINE_SCOUT": "projects/446959546335/locations/us-central1/reasoningEngines/2089712558297579520",
+    "AGENTIC_LENS_ENGINE_CODER": "projects/446959546335/locations/us-central1/reasoningEngines/5395354684787523584",
+    "AGENTIC_LENS_ENGINE_QUALITY_AND_SECURITY_REVIEWER": "projects/446959546335/locations/us-central1/reasoningEngines/2765146949286887424",
+    "CHAT_ENGINE_ID": "projects/446959546335/locations/us-central1/reasoningEngines/7367931321575800832",
+    "GCP_PROJECT_ID": "agentic-security-prd",
     "GCP_LOCATION": "us-central1",
     "REGION": "us-central1",
-    "GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES": "false"
+    "GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES": "false",
+    "AGENTIC_LENS_ENGINE_ENG_LEAD": "projects/446959546335/locations/us-central1/reasoningEngines/3458806845018210304",
+    "AGENTIC_LENS_ENGINE_XRAY_MANAGER": "projects/446959546335/locations/us-central1/reasoningEngines/2801281299422117888",
+    "AGENTIC_LENS_ENGINE_EVENTS": "projects/446959546335/locations/us-central1/reasoningEngines/3711008424150958080"
   },
   "agent_gateway_config": {
-    "client_to_agent_config": {
-      "agent_gateway": "projects/agentic-ai-lens/locations/us-central1/agentGateways/gemini-corp-ingress-gateway"
+    "clientToAgentConfig": {
+      "agentGateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-ingress-gateway"
     },
-    "agent_to_anywhere_config": {
-      "agent_gateway": "projects/agentic-ai-lens/locations/us-central1/agentGateways/gemini-corp-egress-gateway"
+    "agentToAnywhereConfig": {
+      "agentGateway": "projects/446959546335/locations/us-central1/agentGateways/gemini-corp-egress-gateway"
     }
   }
 }

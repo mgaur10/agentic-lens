@@ -1,3 +1,0 @@
-name: agentic_prism_chat_v2
-model: gemini-2.5-flash
-description: "Google Cloud Conference AI Host. Handles general queries and pivots."

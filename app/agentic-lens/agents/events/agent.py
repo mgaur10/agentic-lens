@@ -399,44 +399,60 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-Events agent — Conference Concierge.
-Uses the RAG tool (retrieve_event_info) to ground answers in the corpus.
+Events agent — Conference Concierge with Vertex RAG.
+Uses the Managed RAG Corpus to answer conference logistics questions.
 """
 import os
-import yaml
+import sys
+
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
-
 from src.tools import retrieve_event_info
 
-DEFAULT_MODEL = "gemini-2.5-flash"
-_AGENT_YAML = os.path.join(os.path.dirname(__file__), "agent.yaml")
+root_agent = LlmAgent(
+    name="agentic_prism_events",
+    model="gemini-2.5-flash",
+    description="Events Concierge — answers conference logistics questions using RAG.",
+    instruction=(
+        "You are the Events Concierge for Agentic-Prism.\n\n"
+        "Your mission: Answer questions about conference/event logistics using the RAG knowledge base.\n\n"
+        "Use the `retrieve_event_info` tool to search for relevant information before answering.\n\n"
+        "Topics you handle:\n"
+        "- Event schedules (keynotes, sessions, workshops)\n"
+        "- Venue information (location, rooms, directions)\n"
+        "- Speaker information\n"
+        "- Logistics (meals, transport, registration)\n"
+        "- Networking events and social activities\n\n"
+        "Always search the knowledge base first. If you can't find the answer, "
+        "say so honestly rather than guessing."
+    ),
+    tools=[FunctionTool(retrieve_event_info)],
+)
 
-
-def _load_agent_config() -> dict:
-    """Load name, model, description, instruction from agent.yaml."""
-    with open(_AGENT_YAML, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
-
-
-def _build_root_agent() -> LlmAgent:
-    """Build the Concierge LlmAgent with RAG tool and instruction from agent.yaml."""
-    data = _load_agent_config()
-    return LlmAgent(
-        name=data.get("name", "events"),
-        description=data.get("description", "Conference Concierge"),
-        model=data.get("model", DEFAULT_MODEL),
-        instruction=data.get("instruction", ""),
-        tools=[FunctionTool(retrieve_event_info)],
-    )
-
-
-class EventsAgent:
-    def __init__(self):
-        self._agent = _build_root_agent()
-
-    def query(self, input: str, **kwargs):
-        """Query the events agent."""
-        return self._agent.query(input, **kwargs)
-
-root_agent = EventsAgent()
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_events",
+                department="events",
+                agent_role="events",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

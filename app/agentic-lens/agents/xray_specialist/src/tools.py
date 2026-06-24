@@ -1,41 +1,32 @@
-"""
-X-Ray Specialist — domain-restricted search for IAM inference.
-
-Ensures the agent only uses information from:
-- cloud.google.com (Official GCP Documentation)
-- github.com (Source Code & Official Actions)
-- registry.terraform.io (Official Provider Docs)
-
-Use get_restricted_search_query() or restricted_search() when wiring any search tool.
-"""
-
-from typing import Callable
-
-# Suffix to append to every search query so results are limited to authorized domains.
-SITE_RESTRICTION = " (site:cloud.google.com OR site:github.com OR site:registry.terraform.io)"
+"""X-Ray Specialist tools — IAM lookup and verification."""
+import os
 
 
-def get_restricted_search_query(query: str) -> str:
+def lookup_resource_iam(resource_name: str, project_id: str = "") -> str:
     """
-    Force domain restriction on a search query.
-    Use this when constructing queries for Google Search or any search tool.
-    """
-    q = (query or "").strip()
-    if not q:
-        return q
-    # Avoid appending the restriction twice if the agent already added it.
-    if "site:cloud.google.com" in q or "site:github.com" in q or "site:registry.terraform.io" in q:
-        return q
-    return f"{q}{SITE_RESTRICTION}"
+    Look up IAM policy for a GCP resource.
 
+    Args:
+        resource_name: The resource to look up (e.g., 'projects/my-project').
+        project_id: Optional project ID override.
 
-def restricted_search(query: str, search_function: Callable[[str], str] | None = None) -> str:
+    Returns:
+        str: IAM policy information or error message.
     """
-    Run a search with domain restriction applied to the query.
-    If search_function is provided, calls it with the restricted query and returns the result.
-    Otherwise returns the restricted query string (for use by the agent or another tool).
-    """
-    safe_query = get_restricted_search_query(query)
-    if search_function is not None:
-        return search_function(safe_query)
-    return safe_query
+    project = project_id or os.environ.get("GCP_PROJECT_ID", "")
+    try:
+        from google.cloud import resourcemanager_v3
+        client = resourcemanager_v3.ProjectsClient()
+        # Get IAM policy
+        from google.iam.v1 import iam_policy_pb2
+        resource = resource_name if resource_name.startswith("projects/") else f"projects/{project}"
+        policy = client.get_iam_policy(resource=resource)
+        bindings = []
+        for binding in policy.bindings:
+            members = ", ".join(binding.members)
+            bindings.append(f"  {binding.role}: {members}")
+        if bindings:
+            return f"IAM Policy for {resource}:\n" + "\n".join(bindings)
+        return f"No IAM bindings found for {resource}"
+    except Exception as e:
+        return f"IAM lookup error for {resource_name}: {e}"

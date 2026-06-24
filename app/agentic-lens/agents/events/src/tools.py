@@ -1,53 +1,39 @@
 """Vertex RAG tool for the Events agent — retrieve context from the Managed RAG Corpus."""
-
+import os
 from vertexai.preview import rag
 
-# Managed RAG Corpus (events) — us-west1
-_CORPUS_NAME = "projects/agentic-prism/locations/us-west1/ragCorpora/2305843009213693952"
-_RAG_PROJECT = "agentic-prism"
-_RAG_LOCATION = "us-west1"
+# Use PRD RAG corpus cross-project (no QA corpus exists)
+_CORPUS_NAME = os.environ.get(
+    "RAG_CORPUS_NAME",
+    "projects/agentic-prism/locations/us-west1/ragCorpora/2305843009213693952"
+)
+_RAG_PROJECT = os.environ.get("RAG_PROJECT", "agentic-prism")
+_RAG_LOCATION = os.environ.get("RAG_LOCATION", "us-west1")
 
 
 def retrieve_event_info(query: str) -> str:
-    """Retrieve relevant event information from the Managed RAG Corpus.
+    """
+    Retrieve event information from the Managed RAG Corpus.
 
     Args:
-        query: Natural language question or topic to look up in the corpus.
+        query: The question about the event (schedule, venue, speakers, etc.)
 
     Returns:
-        Concatenated text from the top retrieved contexts, or a fallback message
-        if retrieval fails or returns no contexts.
+        str: Retrieved context from the RAG corpus.
     """
     try:
-        try:
-            import vertexai
-            from vertexai.preview import rag
-            vertexai.init(project=_RAG_PROJECT, location=_RAG_LOCATION)
-        except Exception as e:
-            print(f"ERROR: RAG Init failed: {e}")
-            return f"No relevant information found. (System Error: Init failed: {e})"
-
-        try:
-            resource = rag.RagResource(rag_corpus=_CORPUS_NAME)
-            response = rag.retrieval_query(
-                text=query,
-                rag_resources=[resource],
-                similarity_top_k=5,
-                vector_distance_threshold=0.5,
-            )
-        except Exception as e:
-            print(f"ERROR: RAG Retrieval failed: {e}")
-            return f"No relevant information found. (System Error: Retrieval failed: {e})"
-
-        if not response or not response.contexts or not response.contexts.contexts:
-            return "No relevant information found in the corpus."
-
-        parts = [ctx.text for ctx in response.contexts.contexts if ctx.text]
-        if not parts:
-            return "No relevant information found in the corpus."
-
-        return "\n\n".join(parts)
-        
+        rag_resource = rag.RagResource(rag_corpus=_CORPUS_NAME)
+        response = rag.retrieval_query(
+            rag_resources=[rag_resource],
+            text=query,
+            similarity_top_k=5,
+            vector_distance_threshold=0.5,
+        )
+        contexts = []
+        for ctx in response.contexts.contexts:
+            contexts.append(ctx.text)
+        if contexts:
+            return "\n\n".join(contexts)
+        return "No relevant event information found for your query."
     except Exception as e:
-        print(f"CRITICAL ERROR in retrieve_event_info: {e}")
-        return f"No relevant information found. (Critical Error: {e})"
+        return f"Unable to retrieve event information: {e}"

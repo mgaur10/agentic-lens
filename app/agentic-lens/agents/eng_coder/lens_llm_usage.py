@@ -1,12 +1,21 @@
-"""Structured llm_usage events for per-agent token observability (Cloud Logging + log-based metrics)."""
+"""Structured llm_usage events for per-agent token observability.
+
+Emits a JSON line to stdout so Cloud Logging ingests it as jsonPayload
+(not textPayload). The log-based metrics in agent_observability/log_metrics.tf
+filter on jsonPayload.event="llm_usage" and extract jsonPayload.agent_id,
+jsonPayload.total_tokens, etc.
+
+Key contract:
+  - Field names MUST match the label_extractors in log_metrics.tf:
+      agent_id, department, model, total_tokens, prompt_tokens, output_tokens
+  - Emit via print() to stdout, NOT logging.info() — the latter produces
+    textPayload which the metric filters never match.
+"""
 from __future__ import annotations
 
 import json
-import logging
 import time
 from typing import Any, Mapping, Optional
-
-_logger = logging.getLogger(__name__)
 
 
 def _coerce_int(value: Any, default: int = 0) -> int:
@@ -18,12 +27,21 @@ def _coerce_int(value: Any, default: int = 0) -> int:
         return default
 
 
-def _field(source: Any, key: str, default: Any = None) -> Any:
+def _field(source: Any, *keys: str) -> Any:
+    """Try multiple field names; return first non-None value found."""
     if source is None:
-        return default
+        return None
     if isinstance(source, Mapping):
-        return source.get(key, default)
-    return getattr(source, key, default)
+        for k in keys:
+            v = source.get(k)
+            if v is not None:
+                return v
+        return None
+    for k in keys:
+        v = getattr(source, k, None)
+        if v is not None:
+            return v
+    return None
 
 
 def parse_usage_metadata(llm_response: Any) -> dict[str, int]:
@@ -38,19 +56,17 @@ def parse_usage_metadata(llm_response: Any) -> dict[str, int]:
         return {}
 
     prompt = _coerce_int(
-        _field(usage, "prompt_token_count") or _field(usage, "prompt_tokens")
+        _field(usage, "prompt_token_count", "prompt_tokens", "input_tokens")
     )
     output = _coerce_int(
-        _field(usage, "candidates_token_count")
-        or _field(usage, "output_token_count")
-        or _field(usage, "response_token_count")
-        or _field(usage, "completion_token_count")
+        _field(usage, "candidates_token_count", "output_token_count",
+               "response_token_count", "completion_token_count", "output_tokens")
     )
     thoughts = _coerce_int(
-        _field(usage, "thoughts_token_count") or _field(usage, "thoughts_tokens")
+        _field(usage, "thoughts_token_count", "thoughts_tokens")
     )
     total = _coerce_int(
-        _field(usage, "total_token_count") or _field(usage, "total_tokens")
+        _field(usage, "total_token_count", "total_tokens")
     )
     if total <= 0:
         total = prompt + output + thoughts
@@ -66,18 +82,21 @@ def emit_llm_usage(
     *,
     agent_id: str,
     department: str,
-    agent_role: str,
+    agent_role: str = "supervisor",
     model: Optional[str] = None,
     prompt_tokens: int = 0,
     output_tokens: int = 0,
     thoughts_tokens: int = 0,
     total_tokens: int = 0,
-    lens_request_id: Optional[str] = None,
     session_id: Optional[str] = None,
     status: str = "ok",
     **kwargs: Any,
 ) -> None:
-    """Emit one llm_usage JSON line per LLM completion (not per stream chunk)."""
+    """Emit one llm_usage JSON line per LLM completion.
+
+    Uses print() to stdout so Cloud Run / Vertex AI Reasoning Engine
+    picks it up as jsonPayload in Cloud Logging.
+    """
     if total_tokens <= 0:
         total_tokens = prompt_tokens + output_tokens + thoughts_tokens
     if total_tokens <= 0:
@@ -97,8 +116,6 @@ def emit_llm_usage(
         "llm_call_count": 1,
         "status": status,
     }
-    if lens_request_id:
-        payload["lens_request_id"] = str(lens_request_id)[:80]
     if session_id:
         payload["session_id"] = str(session_id)[:36]
     for key, value in kwargs.items():
@@ -108,16 +125,15 @@ def emit_llm_usage(
     try:
         line = json.dumps(payload, default=str)
     except Exception:
-        line = json.dumps(
-            {
-                "event": "llm_usage",
-                "agent_id": agent_id,
-                "department": department,
-                "total_tokens": total_tokens,
-                "status": "serialization_failed",
-            }
-        )
-    print(line, flush=True)  # structured jsonPayload for Cloud Logging
+        line = json.dumps({
+            "event": "llm_usage",
+            "agent_id": agent_id,
+            "department": department,
+            "total_tokens": total_tokens,
+            "status": "serialization_failed",
+        })
+    # stdout → Cloud Logging jsonPayload (not textPayload via logging.info)
+    print(line, flush=True)
 
 
 def emit_llm_usage_from_response(
@@ -125,9 +141,8 @@ def emit_llm_usage_from_response(
     *,
     agent_id: str,
     department: str,
-    agent_role: str,
+    agent_role: str = "supervisor",
     model: Optional[str] = None,
-    lens_request_id: Optional[str] = None,
     session_id: Optional[str] = None,
     status: str = "ok",
 ) -> None:
@@ -137,15 +152,13 @@ def emit_llm_usage_from_response(
         return
     resolved_model = model
     if not resolved_model:
-        resolved_model = _field(llm_response, "model_version") or _field(
-            llm_response, "model"
-        )
+        resolved_model = (getattr(llm_response, "model_version", None)
+                          or getattr(llm_response, "model", None))
     emit_llm_usage(
         agent_id=agent_id,
         department=department,
         agent_role=agent_role,
         model=str(resolved_model) if resolved_model else None,
-        lens_request_id=lens_request_id,
         session_id=session_id,
         status=status,
         **usage,

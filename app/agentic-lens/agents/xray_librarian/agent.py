@@ -399,16 +399,61 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-X-Ray Librarian — Secure Fetcher.
-Loads the root agent from src.librarian (tools + system prompt).
+X-Ray Librarian — IAM Knowledge Base Curator.
+Maintains the IAM knowledge base used by the X-Ray Specialist and Auditor.
+Provides lookup and learn tools.
 """
 import os
 import sys
 
-_agent_root = os.path.dirname(os.path.abspath(__file__))
-if _agent_root not in sys.path:
-    sys.path.insert(0, _agent_root)
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
 
-from src.librarian import get_root_agent
+from google.adk.agents import LlmAgent
+from google.adk.tools import FunctionTool
+try:
+    from src.tools import lookup_resource_iam, learn_resource_iam
+except ImportError:
+    from tools import lookup_resource_iam, learn_resource_iam
 
-root_agent = get_root_agent(os.path.join(_agent_root, "root_agent.yaml"))
+root_agent = LlmAgent(
+    name="agentic_prism_xray_librarian",
+    model="gemini-2.5-flash",
+    description="X-Ray Librarian — maintains the IAM Knowledge Base for the X-Ray pipeline.",
+    instruction=(
+        "You are the X-Ray Librarian for Agentic-Prism.\n\n"
+        "Your mission: Maintain and query the IAM Knowledge Base.\n\n"
+        "Tools:\n"
+        "- `lookup_resource_iam`: Look up current IAM policy for a GCP resource\n"
+        "- `learn_resource_iam`: Record new IAM information into the knowledge base\n\n"
+        "When asked to look up permissions, use lookup_resource_iam.\n"
+        "When asked to record or learn about IAM configs, use learn_resource_iam.\n\n"
+        "Always return structured, factual IAM information. Do not speculate."
+    ),
+    tools=[FunctionTool(lookup_resource_iam), FunctionTool(learn_resource_iam)],
+)
+
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_xray_librarian",
+                department="xray",
+                agent_role="xray_librarian",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---

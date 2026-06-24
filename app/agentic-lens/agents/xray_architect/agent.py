@@ -399,49 +399,55 @@ else:
 # --- [END GLOBAL PROCESS ENV BOOTSTRAP] ---
 
 """
-X-Ray Architect — Safe config loader.
-Filters deployment metadata so LlmAgent never receives forbidden fields (Pydantic ValidationError fix).
+X-Ray Architect — IAM architecture analyst.
+First stage in the X-Ray pipeline: maps IAM structure.
 """
-import os
-import yaml
 from google.adk.agents import LlmAgent
-from google.adk.agents.llm_agent_config import LlmAgentConfig
 
-DEFAULT_MODEL = "gemini-2.5-pro"
-_ALLOWED_KEYS = frozenset(LlmAgentConfig.model_fields)
+root_agent = LlmAgent(
+    name="agentic_prism_xray_architect",
+    model="gemini-2.5-pro",
+    description="X-Ray Architect — analyzes IAM architecture and resource structure.",
+    instruction=(
+        "You are the X-Ray Architect for Agentic-Prism.\n\n"
+        "Your mission: Analyze the IAM and resource architecture for the given request.\n\n"
+        "You are the FIRST stage in the X-Ray pipeline. Your job is to:\n"
+        "1. Identify what GCP resources are involved\n"
+        "2. Map the IAM hierarchy (project, folder, org levels)\n"
+        "3. Identify what service accounts and roles are relevant\n"
+        "4. Specify what permissions are being requested or causing issues\n"
+        "5. Document the trust boundaries\n\n"
+        "Output a structured analysis that the X-Ray Specialist can use for detailed checking.\n\n"
+        "Format:\n"
+        "## Architecture Analysis\n"
+        "### Resources Involved\n"
+        "### IAM Hierarchy\n"
+        "### Relevant Service Accounts\n"
+        "### Permissions in Scope\n"
+        "### Trust Boundaries\n"
+    ),
+)
 
-
-def _sanitize_agent_name(sanitized: dict, default: str) -> None:
-    """Convert kebab-case to valid Python identifier (hyphens -> underscores)."""
-    name = sanitized.get("name")
-    sanitized["name"] = (name if isinstance(name, str) else default).replace("-", "_")
-
-
-class SafeLlmAgent(LlmAgent):
-    """
-    Safely loads the agent by filtering out deployment metadata (runtime, identity, etc.)
-    before passing config to LlmAgent.
-    """
-
-    @classmethod
-    def from_config(cls, config, config_abs_path: str):
-        if isinstance(config, dict):
-            sanitized = {k: v for k, v in config.items() if k in _ALLOWED_KEYS}
-            sanitized.setdefault("model", DEFAULT_MODEL)
-            _sanitize_agent_name(sanitized, "xray_architect")
-            config = LlmAgentConfig.model_validate(sanitized)
-        return LlmAgent.from_config(config, config_abs_path)
-
-
-def _safe_load_root_agent(config_path: str) -> LlmAgent:
-    abs_path = os.path.abspath(config_path)
-    with open(abs_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    sanitized = {k: v for k, v in data.items() if k in _ALLOWED_KEYS}
-    sanitized["model"] = sanitized.get("model") or DEFAULT_MODEL
-    _sanitize_agent_name(sanitized, "xray_architect")
-    config = LlmAgentConfig.model_validate(sanitized)
-    return LlmAgent.from_config(config, abs_path)
-
-
-root_agent = _safe_load_root_agent(os.path.join(os.path.dirname(__file__), "root_agent.yaml"))
+# --- llm_usage telemetry (per-agent token observability) ---
+import os as _os
+import sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+if _here not in _sys.path:
+    _sys.path.insert(0, _here)
+try:
+    from lens_llm_usage import emit_llm_usage_from_response as _emit_llm_usage
+    def _llm_usage_callback(callback_context, llm_response):
+        try:
+            _emit_llm_usage(
+                llm_response,
+                agent_id="agentic_lens_xray_architect",
+                department="xray",
+                agent_role="xray_architect",
+            )
+        except Exception:
+            pass
+        return None
+    root_agent.after_model_callback = _llm_usage_callback
+except Exception:
+    pass
+# --- end llm_usage telemetry ---
