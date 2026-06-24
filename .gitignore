@@ -60,3 +60,6 @@ artifacts/*-filled.*
 *~
 .DS_Store
 *.log
+
+# Auto-injected by deploy.sh from shared/ — do not commit per-agent copies
+app/agentic-lens/agents/*/lens_llm_usage.py

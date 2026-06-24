@@ -96,7 +96,7 @@ else:
         import sys
         if "google.cloud.aiplatform.utils.resource_manager_utils" in sys.modules:
             mod = sys.modules["google.cloud.aiplatform.utils.resource_manager_utils"]
-            mod.get_project_id = lambda *args, **kwargs: "agentic-security-prd"
+            mod.get_project_id = lambda *args, **kwargs: "agentic-ai-lens"
             mod.get_project_number = lambda *args, **kwargs: "504643566830"
             sys.stderr.write("[BOOTSTRAP] Pre-imported resource_manager_utils successfully patched directly!\n")
             sys.stderr.flush()
@@ -127,7 +127,7 @@ else:
                                     return None
                                 def exec_module(self, module):
                                     self.real_loader.exec_module(module)
-                                    module.get_project_id = lambda *args, **kwargs: "agentic-security-prd"
+                                    module.get_project_id = lambda *args, **kwargs: "agentic-ai-lens"
                                     module.get_project_number = lambda *args, **kwargs: "504643566830"
                                     sys.stderr.write("[BOOTSTRAP] PatchedLoader successfully monkeypatched resource_manager_utils!\n")
                                     sys.stderr.flush()
@@ -149,7 +149,7 @@ else:
         sys.stderr.flush()
 
     # 4. Set early-startup process environment variables
-    os.environ["GOOGLE_CLOUD_PROJECT"] = "agentic-security-prd"
+    os.environ["GOOGLE_CLOUD_PROJECT"] = "agentic-ai-lens"
     os.environ["no_proxy"] = "googleapis.com,.googleapis.com,metadata.google.internal,.metadata.google.internal,.google.internal,169.254.169.254,metadata,github.com,.github.com,.githubusercontent.com,240.0.0.2,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
     os.environ["NO_PROXY"] = "googleapis.com,.googleapis.com,metadata.google.internal,.metadata.google.internal,.google.internal,169.254.169.254,metadata,github.com,.github.com,.githubusercontent.com,240.0.0.2,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
     os.environ["GRPC_DNS_RESOLVER"] = "native"

@@ -19,7 +19,7 @@
     "VERTEX_RAG_LOCATION": "us-west1",
     "VERTEX_RAG_GCS_PATH": "gs://vertex-rag-ingest-agentic-security-prd/incoming/",
     "VERTEX_RAG_CORPUS_ID": "events-rag",
-    "VERTEX_RAG_CORPUS_NAME": "projects/795375693569/locations/us-west1/ragCorpora/2305843009213693952",
+    "VERTEX_RAG_CORPUS_NAME": "projects/446959546335/locations/us-west1/ragCorpora/2305843009213693952",
     "VERTEX_RAG_DISPLAY_NAME": "agentic-lens-events-rag",
     "VERTEX_RAG_DESCRIPTION": "Managed RAG corpus for Concierge Events",
     "REGION": "us-central1",

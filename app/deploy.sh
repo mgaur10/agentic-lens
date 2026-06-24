@@ -92,6 +92,58 @@ if [[ -d "$AGENTS_DIR" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# 3a. OBSERVABILITY GOVERNANCE: inject shared lens_llm_usage.py + pre-flight check
+# ---------------------------------------------------------------------------
+# Single source of truth: agentic-lens/shared/lens_llm_usage.py
+# deploy.sh stamps this file into every agent directory before bundling.
+# Developers NEVER edit per-agent copies — changes go in shared/ only.
+SHARED_LLM_USAGE="$ADK_DIR/shared/lens_llm_usage.py"
+
+if [[ -f "$SHARED_LLM_USAGE" ]]; then
+  echo "🔍 Observability governance: injecting shared lens_llm_usage.py into all agents..."
+  governance_errors=()
+  for agent in "${ALL_AGENTS[@]}"; do
+    agent_dir="$AGENTS_DIR/$agent"
+    [[ -d "$agent_dir" ]] || continue
+
+    # 1. AUTO-INJECT: stamp shared file into agent dir (overwrite stale copies)
+    cp "$SHARED_LLM_USAGE" "$agent_dir/lens_llm_usage.py"
+
+    # 2. GOVERNANCE CHECK: agent.py must wire after_model_callback
+    agent_py="$agent_dir/agent.py"
+    if [[ -f "$agent_py" ]]; then
+      if ! grep -q "after_model_callback" "$agent_py"; then
+        governance_errors+=("$agent")
+        echo "   ⚠️  POLICY: $agent/agent.py missing after_model_callback"
+      fi
+    fi
+  done
+
+  if [[ ${#governance_errors[@]} -gt 0 ]]; then
+    echo ""
+    echo "❌ OBSERVABILITY GOVERNANCE FAILED — the following agents are missing after_model_callback:"
+    echo "   ${governance_errors[*]}"
+    echo ""
+    echo "   Fix: wire the callback in each agent's agent.py:"
+    echo "     from lens_llm_usage import emit_llm_usage_from_response"
+    echo "     root_agent.after_model_callback = lambda ctx, r: emit_llm_usage_from_response("
+    echo "         r, agent_id='agentic_lens_<name>', department='<dept>', agent_role='<role>')"
+    echo ""
+    echo "   See: agentic-lens/shared/lens_llm_usage.py for the contract."
+    echo "   To skip this check (not recommended): SKIP_OBSERVABILITY_CHECK=1 ./deploy.sh"
+    if [[ "${SKIP_OBSERVABILITY_CHECK:-0}" != "1" ]]; then
+      exit 1
+    fi
+    echo "   ⚠️  SKIP_OBSERVABILITY_CHECK=1 — proceeding anyway."
+  else
+    echo "   ✅ Observability governance passed (${#ALL_AGENTS[@]} agents checked)."
+  fi
+else
+  echo "   ⚠️  WARNING: $SHARED_LLM_USAGE not found — skipping observability governance."
+  echo "         Expected at: agentic-lens/shared/lens_llm_usage.py"
+fi
+
+# ---------------------------------------------------------------------------
 # 4. Agent list: from args (deploy only these) or ALL_AGENTS
 # ---------------------------------------------------------------------------
 if [[ $# -ge 1 ]]; then
@@ -191,8 +243,8 @@ c["max_instances"] = deploy_cfg["max_instances"]
 c["resource_limits"] = deploy_cfg["resource_limits"]
 c["container_concurrency"] = deploy_cfg["container_concurrency"]
 c["env_vars"] = {**(c.get("env_vars") or {}), "PYTHONPATH": f"/code/{sys.argv[4].strip()}_staged", "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true", "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY", "GOOGLE_GENAI_USE_VERTEXAI": "true"}
-# agent_gateway_config removed — gemini-corp-ingress/egress-gateway no longer present in agentic-ai-lens
-c.pop("agent_gateway_config", None)
+# agent_gateway_config: preserve if present in config (required by org policy in agentic-security-qa/prd)
+# NOTE: was removed for agentic-ai-lens which lacks gateways — do NOT restore that removal for qa/prd
 if kms_key:
   c["encryption_spec"] = {"kms_key_name": kms_key}
 else:
